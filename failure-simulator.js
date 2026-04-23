@@ -56,19 +56,48 @@
         }
     }
 
-    window.openDamageMenu = function() {
-        if (!window.damageSystem) window.damageSystem = new DamageSystem();
-        // UI logic for the failures menu (extracted from openFailuresMenu)
-        console.log("GeoFS [Damage]: Menu Opened");
-    };
+// ... existing DamageSystem class code ...
 
-    window.initDamageSystem = function() {
-        if (window.damageSystem) return;
-        window.damageSystem = new DamageSystem();
-        
-        // Add "FAIL" button to bottom UI if needed, or integrate with HUD
-        console.log("GeoFS [Damage]: System Initialized.");
-    };
+window.openDamageMenu = function() {
+    if (!window.damageSystem) window.damageSystem = new DamageSystem();
+    
+    // Check if menu already exists, if not, create it using Design System classes
+    if (document.getElementById('geofs-failure-menu')) {
+        document.getElementById('geofs-failure-menu').classList.toggle('active');
+    } else {
+        console.log("GeoFS [Damage]: Creating Failure Menu UI...");
+        // You would typically build your menu here using the classes found in your Design System CSS
+    }
+};
+
+window.initDamageSystem = function() {
+    if (window.damageSystem) return;
+    window.damageSystem = new DamageSystem();
+
+    // INJECTION: Create the button in the bottom UI
+    const uiInterval = setInterval(() => {
+        const bottomBar = document.querySelector('.geofs-ui-bottom');
+        if (bottomBar) {
+            clearInterval(uiInterval);
+
+            // Create the button element
+            const failBtn = document.createElement('button');
+            failBtn.innerHTML = '⚠️ FAIL';
+            failBtn.className = 'geofs-button'; // Use native GeoFS style or your custom ones
+            failBtn.style.background = 'rgba(255, 107, 107, 0.2)';
+            failBtn.style.color = '#ff6b6b';
+            failBtn.style.border = '1px solid rgba(255, 107, 107, 0.4)';
+            failBtn.style.margin = '0 5px';
+            
+            // Set action
+            failBtn.onclick = window.openDamageMenu;
+
+            // Append to bottom bar
+            bottomBar.appendChild(failBtn);
+            console.log("GeoFS [Damage]: UI Button Injected.");
+        }
+    }, 1000);
+};
 
     if (window.SafeInit) {
         window.SafeInit('Damage System', window.initDamageSystem);
