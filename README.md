@@ -1,6 +1,6 @@
 # ✈️ GeoFS Failure Simulator (v3.9)
 
-**GeoFS-Failure-Simulator** is a professional-grade emergency injection framework for the GeoFS flight simulator. This isn't just a script; it’s a stress test for your piloting skills. It introduces randomized, logic-based mechanical failures that turn a routine flight into a high-stakes "learning opportunity."
+**GeoFS-V3.9_Failure-Simulator** is a professional-grade emergency injection framework for the GeoFS flight simulator. This isn't just a script; it’s a stress test for your piloting skills. It introduces randomized, logic-based mechanical failures that turn a routine flight into a high-stakes "learning opportunity."
 
 ---
 
@@ -17,10 +17,10 @@
 This tool is designed to run via **Tampermonkey**. No terminal commands or cloning required for end-users.
 
 1.  **Install Tampermonkey:** Ensure you have the [Tampermonkey extension](https://www.tampermonkey.net/) installed in your browser.
-2.  **Add Script:** * Copy the raw code from `failures-simulator_standalone.user.js` in this repository.
+2.  **Add Script:** * Navigate to `failure-simulator_standalone.user.js` in this repository and view the "Raw" code.
     * Open the Tampermonkey Dashboard -> "Create a new script".
     * Paste the code and hit `Ctrl + S` to save.
-3.  **Launch:** Open [GeoFS](https://www.geo-fs.com/geofs.php) and the simulator will initialize automatically.
+3.  **Launch:** Open [GeoFS](https://www.geo-fs.com/geofs.php) and the simulator will initialize automatically alongside the Core Library.
 
 ---
 
@@ -43,11 +43,11 @@ Found a bug that *isn't* a simulated engine fire? Or perhaps you've designed a n
 
 ## ⚖️ License
 
-Distributed under the **MIT License**. This provides maximum flexibility for the community while keeping the legal "technical debt" at zero.
+Distributed under the **MIT License**. 
 
 ---
 
 ### 📦 Repository Specs
-* **Name:** `GeoFS-Failure-Simulator`
+* **Name:** `GeoFS-V3.9_Failure-Simulator`
 * **.gitignore:** Node 
 * **Target:** GeoFS v3.9+
