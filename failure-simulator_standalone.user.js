@@ -14,7 +14,6 @@
 (function() {
     'use strict';
 
-    // UPDATED: Points to the new repo name and the core logic file
     const damageUrl = 'https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/GeoFS-V3.9_Failure-Simulator/main/failure-simulator.js';
 
     function loadDamageSystem() {
@@ -25,7 +24,7 @@
         console.log('GeoFS [Damage]: Standalone module loaded.');
     }
 
-    // Wait for foundations then load
+    // Wait for the foundations (Core Library + Design System CSS) then load
     const checker = setInterval(() => {
         if (window.SafeInit && document.getElementById('geofs-addon-design-system')) {
             clearInterval(checker);
