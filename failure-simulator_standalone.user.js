@@ -2,18 +2,20 @@
 // @name         GeoFS Damage & Failures System (Standalone)
 // @namespace    http://tampermonkey.net/
 // @version      1.0.0
-// @description  Advanced engine and system failures for GeoFS.
+// @description  Advanced engine and system failures for GeoFS v3.9.
 // @author       AwesomeOddEven-NightKeys-LunarBlink
 // @match        https://www.geo-fs.com/geofs.php*
 // @match        https://*.geo-fs.com/geofs.php*
-// @require      https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/GeoFS-Design-System/main/standalone.user.js
-// @require      https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/GeoFS-Core-Library/main/standalone.user.js
+// @require      https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/GeoFS-V3.9_Design-System/main/standalone.user.js
+// @require      https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/GeoFS-V3.9_Core-Library/main/standalone.user.js
 // @grant        none
 // ==/UserScript==
 
 (function() {
     'use strict';
-    const damageUrl = 'https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/GeoFS-Damage-System/main/src/damage-logic.js';
+    
+    // UPDATED: Points to the new repo name and the core logic file
+    const damageUrl = 'https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/GeoFS-V3.9_Failure-Simulator/main/failure-simulator.js';
 
     function loadDamageSystem() {
         if (window.damageSystem) return;
