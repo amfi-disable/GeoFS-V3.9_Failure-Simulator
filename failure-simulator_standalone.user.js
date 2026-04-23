@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         GeoFS Damage & Failures System (Standalone)
+// @name         GeoFS-V3.9_Failure-Simulator
 // @namespace    http://tampermonkey.net/
 // @version      1.0.0
 // @description  Advanced engine and system failures for GeoFS v3.9.
