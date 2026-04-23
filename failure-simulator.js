@@ -1,5 +1,5 @@
 /**
- * GeoFS Damage & Failures System
+ * GeoFS-V3.9_Failure-Simulator
  * Advanced mechanical failures, structural damage, and maintenance UI.
  * Supports engines, landing gear, flight controls, hydraulics, and more.
  */
