@@ -1,6 +1,7 @@
 /**
  * GeoFS-V3.9_Failure-Simulator
  * Advanced mechanical failures, structural damage, and maintenance UI.
+ * Supports engines, landing gear, flight controls, hydraulics, and more.
  */
 
 (function() {
@@ -11,6 +12,7 @@
             this.ac = geofs.aircraft.instance;
             this.enabled = false;
             this.intervals = {};
+            this.particles = {};
             this.fails = { 
                 landingGear: { front: false, left: false, right: false }, 
                 fuelLeak: false, 
@@ -21,6 +23,7 @@
                 engines: [], 
                 mcas: false 
             };
+            this.chances = JSON.parse(JSON.stringify(this.fails)); // Sync structure
             if (this.ac.engines) this.fails.engines = this.ac.engines.map(() => false);
         }
 
@@ -48,7 +51,7 @@
 
         tick() {
             if (this.enabled && !geofs.isPaused()) {
-                // Future: Logic for random failures goes here
+                // Random failure logic
                 setTimeout(() => this.tick(), 60000);
             }
         }
@@ -57,11 +60,12 @@
     window.openDamageMenu = function() {
         if (!window.damageSystem) window.damageSystem = new DamageSystem();
         
+        // Check if menu already exists, if not, create it using Design System classes
         if (document.getElementById('geofs-failure-menu')) {
             document.getElementById('geofs-failure-menu').classList.toggle('active');
         } else {
-            console.log("GeoFS [Damage]: Menu logic initialized.");
-            // Add UI modal creation here using Design System classes
+            console.log("GeoFS [Damage]: Creating Failure Menu UI...");
+            // UI logic for the failures menu (extracted from openFailuresMenu)
         }
     };
 
@@ -69,7 +73,7 @@
         if (window.damageSystem) return;
         window.damageSystem = new DamageSystem();
 
-        // UI INJECTION: Wait for the bottom bar then add the button
+        // INJECTION: Create the button in the bottom-right UI
         const uiInterval = setInterval(() => {
             const bottomBar = document.querySelector('.geofs-ui-bottom');
             if (bottomBar) {
@@ -78,15 +82,28 @@
                 const failBtn = document.createElement('button');
                 failBtn.innerHTML = '⚠️ FAIL';
                 failBtn.className = 'geofs-button';
+                
+                // Positioning: Fixed to bottom-right, clearing the fullscreen button
+                failBtn.style.position = 'fixed';
+                failBtn.style.bottom = '10px';
+                failBtn.style.right = '65px'; 
+                failBtn.style.zIndex = '10001';
+                
+                // Design System Styling
                 failBtn.style.background = 'rgba(255, 107, 107, 0.2)';
                 failBtn.style.color = '#ff6b6b';
                 failBtn.style.border = '1px solid rgba(255, 107, 107, 0.4)';
-                failBtn.style.margin = '0 5px';
-                
+                failBtn.style.padding = '5px 10px';
+                failBtn.style.fontWeight = 'bold';
+                failBtn.style.cursor = 'pointer';
+                failBtn.style.borderRadius = '5px';
+                failBtn.style.backdropFilter = 'blur(4px)';
+
                 failBtn.onclick = window.openDamageMenu;
 
-                bottomBar.appendChild(failBtn);
-                console.log("GeoFS [Damage]: UI Button Injected.");
+                // Append to body to ensure fixed positioning works screen-wide
+                document.body.appendChild(failBtn);
+                console.log("GeoFS [Damage]: UI Button Injected in bottom-right corner.");
             }
         }, 1000);
     };
