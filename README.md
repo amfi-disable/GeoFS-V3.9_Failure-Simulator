@@ -1,27 +1,53 @@
-# ✈️ GeoFS-V3.9_Failure-Simulator
+# ✈️ GeoFS Failure Simulator (v3.9)
 
-**GeoFS-Failure-Simulator** is a comprehensive failure-injection framework for the GeoFS flight simulator. This repository provides the logic and scripts necessary to simulate realistic aviation emergencies, pushing pilot skill to the limit through "standardized chaos."
+**GeoFS-Failure-Simulator** is a professional-grade emergency injection framework for the GeoFS flight simulator. This isn't just a script; it’s a stress test for your piloting skills. It introduces randomized, logic-based mechanical failures that turn a routine flight into a high-stakes "learning opportunity."
+
+---
 
 ## 🚀 Key Features
-* **Randomized Engine Failures:** Spontaneous flameouts, bird strikes, and oil pressure drops.
-* **Systemic Anomalies:** Electrical failures, HUD blackouts, and landing gear jams.
-* **Environmental Stressors:** Simulated icing effects and turbulence-induced structural stress.
-* **V3.9 Optimized:** Fully compatible with the latest GeoFS physics engine and aircraft models.
+* **Dynamic Engine Failures:** Spontaneous flameouts, bird strikes, and oil pressure drops.
+* **Systemic Anomalies:** Total electrical blackouts, HUD failures, and landing gear jams.
+* **Control Surface Glitches:** Jammed flaps and unresponsive ailerons to test your manual trim skills.
+* **V3.9 Physics Integration:** Optimized for the latest GeoFS flight models for realistic stalls and drag.
 
-## 🛠 Installation
-1.  **Clone the Repository:**
-    ```bash
-    git clone [https://github.com/yourusername/GeoFS-Failure-Simulator.git](https://github.com/yourusername/GeoFS-Failure-Simulator.git)
-    ```
-2.  **Implementation:**
-    * Load the `core.js` script into your browser's console while GeoFS is running.
-    * Alternatively, use a userscript manager (like Tampermonkey) to auto-load the extension.
+---
 
-## ⚙️ How to Use
-Once active, use the **Fail-Sim Dashboard** (accessible via the `[Shift + F]` shortcut) to toggle failure probabilities or trigger an immediate "Engine 1 Fire" for training.
+## 🛠️ Installation
+
+This tool is designed to run via **Tampermonkey**. No terminal commands or cloning required for end-users.
+
+1.  **Install Tampermonkey:** Ensure you have the [Tampermonkey extension](https://www.tampermonkey.net/) installed in your browser.
+2.  **Add Script:** * Copy the raw code from `failures-simulator_standalone.user.js` in this repository.
+    * Open the Tampermonkey Dashboard -> "Create a new script".
+    * Paste the code and hit `Ctrl + S` to save.
+3.  **Launch:** Open [GeoFS](https://www.geo-fs.com/geofs.php) and the simulator will initialize automatically.
+
+---
+
+## ⚙️ Operating Procedures
+
+Once you're in the cockpit, the simulator runs silently until disaster strikes.
+
+* **Failure Dashboard:** Press **`[Shift + F]`** to view your current system status or manually trigger a "training" emergency.
+* **Chaos Factor:** Adjust the failure probability in the settings menu. Lower for realism, higher if you’re feeling particularly brave.
+
+> **Pilot's Note:** If you hear the master caution alarm, remain calm. Check your instruments, follow your checklists, and remember: **Aviate, Navigate, Communicate.**
+
+---
 
 ## 🤝 Contributing
-Found a bug that *isn't* a simulated engine failure? Open an issue. Contributions to the probability logic and new failure types are always welcome.
+
+Found a bug that *isn't* a simulated engine fire? Or perhaps you've designed a new way for a turbine to explode? Open an issue or submit a Pull Request. Let's make "smooth landings" a thing of the past.
+
+---
 
 ## ⚖️ License
-Distributed under the **MIT License**. See `LICENSE` for more information.
+
+Distributed under the **MIT License**. This provides maximum flexibility for the community while keeping the legal "technical debt" at zero.
+
+---
+
+### 📦 Repository Specs
+* **Name:** `GeoFS-Failure-Simulator`
+* **.gitignore:** Node 
+* **Target:** GeoFS v3.9+
