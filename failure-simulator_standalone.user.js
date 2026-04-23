@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GeoFS-V3.9_Failure-Simulator
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
-// @description  Advanced engine and system failures for GeoFS v3.9.
+// @version      1.0.1
+// @description  Advanced emergency simulation framework for GeoFS v3.9.
 // @author       AwesomeOddEven-NightKeys-LunarBlink
 // @match        https://www.geo-fs.com/geofs.php*
 // @match        https://*.geo-fs.com/geofs.php*
@@ -13,7 +13,7 @@
 
 (function() {
     'use strict';
-
+    
     const damageUrl = 'https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/GeoFS-V3.9_Failure-Simulator/main/failure-simulator.js';
 
     function loadDamageSystem() {
@@ -21,14 +21,20 @@
         const script = document.createElement('script');
         script.src = damageUrl;
         document.head.appendChild(script);
-        console.log('GeoFS [Damage]: Standalone module loaded.');
+        console.log('GeoFS [Damage]: Main logic fetched from CDN.');
     }
 
-    // Wait for the foundations (Core Library + Design System CSS) then load
+    console.log('GeoFS [Damage]: Waiting for Core and Design systems...');
+
     const checker = setInterval(() => {
-        if (window.SafeInit && document.getElementById('geofs-addon-design-system')) {
+        // Ensure both dependencies are active before launching
+        const coreReady = !!window.SafeInit;
+        const designReady = !!document.getElementById('geofs-addon-design-system');
+
+        if (coreReady && designReady) {
             clearInterval(checker);
+            console.log('GeoFS [Damage]: Foundations confirmed. Loading Simulator...');
             loadDamageSystem();
         }
-    }, 500);
+    }, 1000);
 })();
