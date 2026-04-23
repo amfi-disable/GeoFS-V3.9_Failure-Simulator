@@ -1,4 +1,4 @@
-# ✈️ GeoFS Failure Simulator (v3.9)
+# ✈️ GeoFS-V3.9_Failure-Simulator
 
 **GeoFS-V3.9_Failure-Simulator** is a professional-grade emergency injection framework for the GeoFS flight simulator. This isn't just a script; it’s a stress test for your piloting skills. It introduces randomized, logic-based mechanical failures that turn a routine flight into a high-stakes "learning opportunity."
 
