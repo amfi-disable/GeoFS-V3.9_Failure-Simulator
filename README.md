@@ -1,53 +1,53 @@
-# ✈️ GeoFS-V3.9_Failure-Simulator
+# GeoFS Failure Simulator v3.9
 
-**GeoFS-V3.9_Failure-Simulator** is a professional-grade emergency injection framework for the GeoFS flight simulator. This isn't just a script; it’s a stress test for your piloting skills. It introduces randomized, logic-based mechanical failures that turn a routine flight into a high-stakes "learning opportunity."
-
----
-
-## 🚀 Key Features
-* **Dynamic Engine Failures:** Spontaneous flameouts, bird strikes, and oil pressure drops.
-* **Systemic Anomalies:** Total electrical blackouts, HUD failures, and landing gear jams.
-* **Control Surface Glitches:** Jammed flaps and unresponsive ailerons to test your manual trim skills.
-* **V3.9 Physics Integration:** Optimized for the latest GeoFS flight models for realistic stalls and drag.
+The **Failure Simulator v3.9** is a high-fidelity emergency simulation framework for [GeoFS](https://www.geo-fs.com/). It combines the robust mechanical logic of the classic "GeoFS Failures" script with the premium design and expanded capabilities of the **[GeoFS v3.9 Addon-Pack](https://github.com/AwesomeOddEven-NightKeys-LunarBlink/GeoFS-V3.9_Addon-Pack)**.
 
 ---
 
-## 🛠️ Installation
+## ✨ Features
 
-This tool is designed to run via **Tampermonkey**. No terminal commands or cloning required for end-users.
+### 🛠️ Core Failure Mechanics
+- **Engine Failures**: Realistic thrust loss and black smoke particle effects.
+- **Timed Fuel Leaks**: Experience a critical 2-minute "limp" window before total engine shutdown.
+- **Advanced Gear Systems**: Intelligent multi-bogie detection for complex aircraft (A380, 747, etc.), ensuring all relevant suspension points collapse.
+- **Flight Control Jams**: Physically frozen ailerons, elevators, and rudders that accurately affect flight dynamics.
+- **Avionics & Hydraulics**: Complete simulation of electrical bus failures (dark cockpit), brake loss, spoiler jams, and flap actuator failures.
+- **Environmental Hazards**: Cabin depressurization and significant structural fatigue affecting turbulence.
+- **MCAS Simulation**: Realistic uncommanded nose-down trim cycles for applicable aircraft.
 
-1.  **Install Tampermonkey:** Ensure you have the [Tampermonkey extension](https://www.tampermonkey.net/) installed in your browser.
-2.  **Add Script:** * Navigate to `failure-simulator_standalone.user.js` in this repository and view the "Raw" code.
-    * Open the Tampermonkey Dashboard -> "Create a new script".
-    * Paste the code and hit `Ctrl + S` to save.
-3.  **Launch:** Open [GeoFS](https://www.geo-fs.com/geofs.php) and the simulator will initialize automatically alongside the Core Library.
-
----
-
-## ⚙️ Operating Procedures
-
-Once you're in the cockpit, the simulator runs silently until disaster strikes.
-
-* **Failure Dashboard:** Press **`[Shift + F]`** to view your current system status or manually trigger a "training" emergency.
-* **Chaos Factor:** Adjust the failure probability in the settings menu. Lower for realism, higher if you’re feeling particularly brave.
-
-> **Pilot's Note:** If you hear the master caution alarm, remain calm. Check your instruments, follow your checklists, and remember: **Aviate, Navigate, Communicate.**
+### 🎮 Advanced Control Interface
+- **Granular Fix System**: Every individual system can be manually failed or fixed using dedicated buttons.
+- **Global Toggles**: Instant "FAIL ALL" and "FIX ALL" buttons for rapid scenario deployment.
+- **Category Rapid-Fail**: Micro-buttons `[X]` and `[✓]` to manage entire categories (Engines, Landing Gear, etc.) with one click.
+- **Probability Simulator**: A background simulation engine that triggers random failures based on your configured chances.
+- **Safety Locking**: When "Enable Probability" is active, probability sliders are **automatically locked** to prevent input conflicts and ensure simulation stability.
 
 ---
 
-## 🤝 Contributing
+## 🔧 Installation Tutorial
 
-Found a bug that *isn't* a simulated engine fire? Or perhaps you've designed a new way for a turbine to explode? Open an issue or submit a Pull Request. Let's make "smooth landings" a thing of the past.
+To use this simulator in GeoFS, you will need the **Tampermonkey** browser extension.
+
+### 1. Install Tampermonkey
+- **Chrome/Edge**: [Chrome Web Store](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
+- **Firefox**: [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/)
+- **Safari**: [App Store](https://apps.apple.com/us/app/tampermonkey/id1459806926)
+
+### 2. Install the Script
+1. Click on the following link to view the standalone script: [failure-simulator_standalone.user.js](./failure-simulator_standalone.user.js)
+2. Copy the entire contents of the file.
+3. Open the **Tampermonkey Dashboard** in your browser.
+4. Click the **"+" (Plus)** icon to create a new script.
+5. Delete the default template and paste the copied code.
+6. Press `Ctrl+S` (or `Cmd+S`) to save.
+
+### 3. Start Flying
+Refresh GeoFS. A red **"FAILURES"** button will appear in the bottom-right corner of your screen.
 
 ---
 
-## ⚖️ License
-
-Distributed under the **MIT License**. 
+## 📦 Part of a Larger Ecosystem
+This standalone simulator is an integrated component of the **[GeoFS v3.9 Addon-Pack](https://github.com/AwesomeOddEven-NightKeys-LunarBlink/GeoFS-V3.9_Addon-Pack)**. For the full experience, including modernized weather, graphics, and UI enhancements, check out the main repository.
 
 ---
-
-### 📦 Repository Specs
-* **Name:** `GeoFS-V3.9_Failure-Simulator`
-* **.gitignore:** Node 
-* **Target:** GeoFS v3.9+
+*Maintained by the GeoFS-V3.9 Development Team.*
