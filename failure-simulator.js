@@ -84,7 +84,7 @@
                 switch(system) {
                     case "fuelLeak":
                         if (!this.fails.fuelLeak) {
-                            this.notify("Fuel leak! 2 minutes of fuel remaining");
+                            this.notify("Fuel leak! 2 minutes of fuel remaining.");
                             this.fails.fuelLeak = true;
                             const leakTimer = setTimeout(() => {
                                 const killInt = setInterval(() => { ac.stopEngine(); }, 1000);
@@ -96,7 +96,7 @@
 
                     case "gearFront":
                         if (!this.fails.landingGear.front) {
-                            this.notify("Nose gear failure");
+                            this.notify("Nose gear failure.");
                             this.fails.landingGear.front = true;
                             const indices = [];
                             ac.suspensions.forEach((s, i) => {
@@ -111,7 +111,7 @@
 
                     case "gearLeft":
                         if (!this.fails.landingGear.left) {
-                            this.notify("Left gear failure");
+                            this.notify("Left gear failure.");
                             this.fails.landingGear.left = true;
                             const indices = [];
                             ac.suspensions.forEach((s, i) => {
@@ -126,7 +126,7 @@
 
                     case "gearRight":
                         if (!this.fails.landingGear.right) {
-                            this.notify("Right gear failure");
+                            this.notify("Right gear failure.");
                             this.fails.landingGear.right = true;
                             const indices = [];
                             ac.suspensions.forEach((s, i) => {
@@ -141,7 +141,7 @@
 
                     case "ailerons":
                         if (!this.fails.flightCtrl.ailerons) {
-                            this.notify("Flight control failure (ailerons)");
+                            this.notify("Flight control failure (ailerons).");
                             this.fails.flightCtrl.ailerons = true;
                             this.failures.set("ailerons", setInterval(() => {
                                 ac.airfoils.forEach(a => { if (a.name.toLowerCase().includes("aileron")) a.object3d._scale = [0,0,0]; });
@@ -151,7 +151,7 @@
 
                     case "elevators":
                         if (!this.fails.flightCtrl.elevators) {
-                            this.notify("Flight control failure (elevators)");
+                            this.notify("Flight control failure (elevators).");
                             this.fails.flightCtrl.elevators = true;
                             this.failures.set("elevators", setInterval(() => {
                                 ac.airfoils.forEach(a => { if (a.name.toLowerCase().includes("elevator")) a.object3d._scale = [0,0,0]; });
@@ -161,7 +161,7 @@
 
                     case "rudder":
                         if (!this.fails.flightCtrl.rudder) {
-                            this.notify("Flight control failure (rudder)");
+                            this.notify("Flight control failure (rudder).");
                             this.fails.flightCtrl.rudder = true;
                             this.failures.set("rudder", setInterval(() => {
                                 ac.airfoils.forEach(a => { if (a.name.toLowerCase().includes("rudder")) a.object3d._scale = [0,0,0]; });
@@ -171,7 +171,7 @@
 
                     case "electrical":
                         if (!this.fails.electrical) {
-                            this.notify("Electrical failure");
+                            this.notify("Electrical failure.");
                             this.fails.electrical = true;
                             this.failures.set("electrical", setInterval(() => {
                                 if (ac.cockpitSetup) ac.cockpitSetup.parts.forEach((p, idx) => { if(idx >= 1 && idx <= 5 && p.object3d) p.object3d._scale = [0,0,0]; });
@@ -183,7 +183,7 @@
 
                     case "structural":
                         if (!this.fails.structural) {
-                            this.notify("Significant structural damage detected");
+                            this.notify("Significant structural damage detected.");
                             this.fails.structural = true;
                             this.failures.set("structural", setInterval(() => { window.weather.definition.turbulences = 3; }, 1000));
                         }
@@ -191,7 +191,7 @@
 
                     case "flaps":
                         if (!this.fails.hydraulic.flaps) {
-                            this.notify("Hydraulic failure (flaps)");
+                            this.notify("Hydraulic failure (flaps).");
                             this.fails.hydraulic.flaps = true;
                             this.failures.set("flaps", setInterval(() => {
                                 window.controls.flaps.target = Math.floor(0.6822525 * (window.geofs.animation.values.flapsSteps * 2));
@@ -202,7 +202,7 @@
 
                     case "brakes":
                         if (!this.fails.hydraulic.brakes) {
-                            this.notify("Hydraulic failure (brakes)");
+                            this.notify("Hydraulic failure (brakes).");
                             this.fails.hydraulic.brakes = true;
                             this.failures.set("brakes", setInterval(() => { window.controls.brakes = 0; }, 500));
                         }
@@ -210,7 +210,7 @@
 
                     case "spoilers":
                         if (!this.fails.hydraulic.spoilers) {
-                            this.notify("Hydraulic failure (spoilers)");
+                            this.notify("Hydraulic failure (spoilers).");
                             this.fails.hydraulic.spoilers = true;
                             this.failures.set("spoilers", setInterval(() => {
                                 window.controls.airbrakes.target = 0.2;
@@ -351,12 +351,12 @@
                 if (btn) { btn.innerText = "DISABLE PROBABILITY"; btn.classList.replace('success', 'danger'); }
                 sliders.forEach(s => s.disabled = true);
                 this.tick();
-                this.notify("Probability Enabled", "info");
+                this.notify("Probability Enabled.", "info");
             } else {
                 if (btn) { btn.innerText = "ENABLE PROBABILITY"; btn.classList.replace('danger', 'success'); }
                 sliders.forEach(s => s.disabled = false);
                 clearTimeout(this.tickInterval);
-                this.notify("Probability Disabled", "info");
+                this.notify("Probability Disabled.", "info");
             }
         }
 
