@@ -484,7 +484,7 @@
         if (document.getElementById('geofs-fail-btn')) return;
         const btn = document.createElement('div');
         btn.id = 'geofs-fail-btn';
-        btn.innerHTML = `<button class="addonpack-btn danger" style="position:fixed; right:20px; bottom:20px; z-index:10000;" onclick="window.openDamageMenu()">FAILURES</button>`;
+        btn.innerHTML = `<button class="addonpack-btn danger" style="position:fixed; right:120px; bottom:10px; z-index:10000;" onclick="window.openDamageMenu()">FAILURES</button>`;
         document.body.appendChild(btn);
     };
 
