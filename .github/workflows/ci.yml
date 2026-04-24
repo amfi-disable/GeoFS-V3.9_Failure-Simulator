@@ -1,0 +1,33 @@
+name: Project Health & Validator
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-node-version: '18'
+
+    - name: Check for Syntax Errors (Javascript)
+      run: |
+        find . -name "*.js" ! -path "*/node_modules/*" | xargs -n 1 node --check
+
+    - name: Verify Documentation Presence
+      run: |
+        if [ ! -f README.md ]; then echo "Missing README.md" && exit 1; fi
+        if [ ! -f LICENSE ]; then echo "Missing LICENSE" && exit 1; fi
+        if [ ! -d release-notes ]; then echo "Missing release-notes folder" && exit 1; fi
+
+    - name: Success Message
+      run: echo "Project health check passed! No syntax errors detected."
