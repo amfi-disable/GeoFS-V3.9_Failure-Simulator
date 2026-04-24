@@ -98,9 +98,10 @@
                         if (!this.fails.landingGear.front) {
                             this.notify("Nose gear failure.");
                             this.fails.landingGear.front = true;
-                            var fG = 2;
+                            var fG = 0; // Standard Nose Index
                             for (var i = 0; i < ac.suspensions.length; i++) {
-                                if (ac.suspensions[i].name.includes("front") || ac.suspensions[i].name.includes("nose") || ac.suspensions[i].name.includes("tail")) {
+                                let n = ac.suspensions[i].name ? ac.suspensions[i].name.toLowerCase() : "";
+                                if (n.includes("front") || n.includes("nose") || n.includes("tail")) {
                                     fG = i;
                                 }
                             }
@@ -114,9 +115,10 @@
                         if (!this.fails.landingGear.left) {
                             this.notify("Left gear failure.");
                             this.fails.landingGear.left = true;
-                            var lG = 0;
+                            var lG = 1; // Standard Left Index
                             for (var i = 0; i < ac.suspensions.length; i++) {
-                                if (ac.suspensions[i].name.includes("left") || ac.suspensions[i].name.includes("l")) {
+                                let n = ac.suspensions[i].name ? ac.suspensions[i].name.toLowerCase() : "";
+                                if (n.includes("left") || n.includes("l_g") || n.includes("main l")) {
                                     lG = i;
                                 }
                             }
@@ -130,9 +132,10 @@
                         if (!this.fails.landingGear.right) {
                             this.notify("Right gear failure.");
                             this.fails.landingGear.right = true;
-                            var rG = 1;
+                            var rG = 2; // Standard Right Index
                             for (var i = 0; i < ac.suspensions.length; i++) {
-                                if (ac.suspensions[i].name.includes("right") || ac.suspensions[i].name.includes("r_g")) {
+                                let n = ac.suspensions[i].name ? ac.suspensions[i].name.toLowerCase() : "";
+                                if (n.includes("right") || n.includes("r_g") || n.includes("main r")) {
                                     rG = i;
                                 }
                             }
