@@ -33,17 +33,21 @@
                 engines: []
             };
 
-            for (let i = 0; i < ac.engines.length; i++) {
+            const numEngines = (ac.engines && ac.engines.length) ? ac.engines.length : 0;
+            for (let i = 0; i < numEngines; i++) {
                 this.fails.engines.push({i: false});
                 this.chances.engines.push(0);
             }
         }
 
         notify(text, type = "error") {
-            if (window.vNotify) {
-                vNotify[type]({text: text});
+            if (window.vNotify && typeof window.vNotify[type] === 'function') {
+                window.vNotify[type]({text: text});
+            } else if (window.ui && window.ui.notification) {
+                window.ui.notification.show(text);
             } else {
-                alert(text);
+                console.log("[Failure Simulator] " + text);
+                try { alert(text); } catch(e) {}
             }
         }
 
@@ -51,7 +55,8 @@
             const ac = window.geofs.aircraft.instance;
             
             // Engines
-            for (let i = 0; i < ac.engines.length; i++) {
+            const numEngines = (ac.engines && ac.engines.length) ? ac.engines.length : 0;
+            for (let i = 0; i < numEngines; i++) {
                 if (system === ("engine" + i) && !this.fails.engines[i].i) {
                     this.notify(`Engine ${i+1} failed!`);
                     this.fails.engines[i].i = true;
@@ -93,12 +98,12 @@
                         if (!this.fails.landingGear.front) {
                             this.notify("Nose gear failure");
                             this.fails.landingGear.front = true;
-                            let fG = -1;
+                            let fG = 2; // Legacy default
                             for (let i = 0; i < ac.suspensions.length; i++) {
                                 let s = ac.suspensions[i];
-                                if (s.name.includes("front") || s.name.includes("nose") || s.name.includes("tail") || (s.localCollisionPoint[0] > 1.5 && Math.abs(s.localCollisionPoint[1]) < 0.8)) fG = i;
+                                if (s.name.toLowerCase().includes("front") || s.name.toLowerCase().includes("nose") || s.name.toLowerCase().includes("tail")) fG = i;
                             }
-                            if (fG !== -1) this.failures.set("gearFront", setInterval(() => { ac.suspensions[fG].collisionPoints[0][2] = 30; }, 1000));
+                            this.failures.set("gearFront", setInterval(() => { if (ac.suspensions[fG]) ac.suspensions[fG].collisionPoints[0][2] = 30; }, 1000));
                         }
                         break;
 
@@ -106,12 +111,12 @@
                         if (!this.fails.landingGear.left) {
                             this.notify("Left gear failure");
                             this.fails.landingGear.left = true;
-                            let lG = -1;
+                            let lG = 0; // Legacy default
                             for (let i = 0; i < ac.suspensions.length; i++) {
                                 let s = ac.suspensions[i];
-                                if (s.name.includes("left") || s.name.includes("l") || (s.localCollisionPoint[1] > 0.8 && s.localCollisionPoint[0] < 1.5)) lG = i;
+                                if (s.name.toLowerCase().includes("left") || s.name.toLowerCase().includes("l")) lG = i;
                             }
-                            if (lG !== -1) this.failures.set("gearLeft", setInterval(() => { ac.suspensions[lG].collisionPoints[0][2] = 30; }, 1000));
+                            this.failures.set("gearLeft", setInterval(() => { if (ac.suspensions[lG]) ac.suspensions[lG].collisionPoints[0][2] = 30; }, 1000));
                         }
                         break;
 
@@ -119,12 +124,12 @@
                         if (!this.fails.landingGear.right) {
                             this.notify("Right gear failure");
                             this.fails.landingGear.right = true;
-                            let rG = -1;
+                            let rG = 1; // Legacy default
                             for (let i = 0; i < ac.suspensions.length; i++) {
                                 let s = ac.suspensions[i];
-                                if (s.name.includes("right") || s.name.includes("r_g") || (s.localCollisionPoint[1] < -0.8 && s.localCollisionPoint[0] < 1.5)) rG = i;
+                                if (s.name.toLowerCase().includes("right") || s.name.toLowerCase().includes("r_g")) rG = i;
                             }
-                            if (rG !== -1) this.failures.set("gearRight", setInterval(() => { ac.suspensions[rG].collisionPoints[0][2] = 30; }, 1000));
+                            this.failures.set("gearRight", setInterval(() => { if (ac.suspensions[rG]) ac.suspensions[rG].collisionPoints[0][2] = 30; }, 1000));
                         }
                         break;
 
@@ -352,7 +357,8 @@
         failAll() {
             const ac = window.geofs.aircraft.instance;
             ["gearFront", "gearLeft", "gearRight", "fuelLeak", "ailerons", "elevators", "rudder", "electrical", "structural", "flaps", "brakes", "spoilers", "pressurization", "mcas"].forEach(s => this.fail(s));
-            for (let i = 0; i < ac.engines.length; i++) this.fail("engine" + i);
+            const numEngines = (ac.engines && ac.engines.length) ? ac.engines.length : 0;
+            for (let i = 0; i < numEngines; i++) this.fail("engine" + i);
         }
 
         reset() {
@@ -441,8 +447,9 @@
             htmlContent += buildSliderBlock("Cabin Pressurization", "Press", "pressurization", "pressurization");
             htmlContent += buildSliderBlock("MCAS Error", "MCAS", "mcas", "mcas");
 
-            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1}">Engines ${span}</h1> ${buildCat(Array.from({length: geofs.aircraft.instance.engines.length}, (_, i) => `engine${i}`), Array.from({length: geofs.aircraft.instance.engines.length}, (_, i) => `engine${i}`))}</div>`;
-            for (let i = 0; i < geofs.aircraft.instance.engines.length; i++) htmlContent += buildSliderBlock(`Engine ${i+1}`, `Eng${i}`, `engine${i}`, `engines[${i}]`);
+            const numEngines = (geofs.aircraft.instance.engines && geofs.aircraft.instance.engines.length) ? geofs.aircraft.instance.engines.length : 0;
+            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1}">Engines ${span}</h1> ${buildCat(Array.from({length: numEngines}, (_, i) => `engine${i}`), Array.from({length: numEngines}, (_, i) => `engine${i}`))}</div>`;
+            for (let i = 0; i < numEngines; i++) htmlContent += buildSliderBlock(`Engine ${i+1}`, `Eng${i}`, `engine${i}`, `engines[${i}]`);
 
             htmlContent += `</div>`;
             menu.innerHTML = htmlContent;
