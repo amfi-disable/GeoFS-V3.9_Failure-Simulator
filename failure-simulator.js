@@ -484,8 +484,49 @@
         if (document.getElementById('geofs-fail-btn')) return;
         const btn = document.createElement('div');
         btn.id = 'geofs-fail-btn';
-        btn.innerHTML = `<button class="addonpack-btn danger" style="position:fixed; right:120px; bottom:10px; z-index:10000;" onclick="window.openDamageMenu()">FAILURES</button>`;
+        btn.style.position = "fixed";
+        btn.style.right = "120px";
+        btn.style.bottom = "10px";
+        btn.style.zIndex = "10000";
+        btn.style.cursor = "move";
+        btn.innerHTML = `<button class="addonpack-btn danger" style="pointer-events: none;">FAILURES</button>`;
         document.body.appendChild(btn);
+
+        let isDragging = false;
+        let startPos = { x: 0, y: 0 };
+        let hasMoved = false;
+
+        btn.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            hasMoved = false;
+            const rect = btn.getBoundingClientRect();
+            btn.style.right = 'auto';
+            btn.style.bottom = 'auto';
+            btn.style.left = rect.left + 'px';
+            btn.style.top = rect.top + 'px';
+            startPos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            hasMoved = true;
+            let x = e.clientX - startPos.x;
+            let y = e.clientY - startPos.y;
+            
+            // Screen Locks (Boundaries)
+            const maxX = window.innerWidth - btn.offsetWidth;
+            const maxY = window.innerHeight - btn.offsetHeight;
+            x = Math.max(0, Math.min(x, maxX));
+            y = Math.max(0, Math.min(y, maxY));
+            
+            btn.style.left = x + 'px';
+            btn.style.top = y + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging && !hasMoved) window.openDamageMenu();
+            isDragging = false;
+        });
     };
 
     if (window.SafeInit) SafeInit("Failure Simulator", window.initDamageSystem);
