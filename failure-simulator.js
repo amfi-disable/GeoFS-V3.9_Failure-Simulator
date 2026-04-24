@@ -298,14 +298,19 @@
     // Helper function to build the stylized glass UI blocks
     function buildSliderBlock(title, id, failId, objectPath) {
         return `
-        <div style="margin-bottom: 12px;">
-            <h2 style="font-size: 14px; margin: 0 0 4px 0; color: #fff;">${title}</h2>
-            <span style="font-size: 11px; color: rgba(255,255,255,0.7); vertical-align: top;">Chance per min: </span>
-            <input type="range" value="0" min="0" max="1" step="0.01" id="slide${id}" 
-                   onchange="document.getElementById('input${id}').value = this.value; window.damageSystem.chances.${objectPath} = parseFloat(this.value);" 
-                   style="vertical-align: bottom; width: 120px;">
-            <input disabled id="input${id}" value="0" style="width: 35px; background: rgba(0,0,0,0.3); border: 1px solid rgba(100,200,255,0.3); color: #64c8ff; border-radius: 4px; text-align: center; font-size: 11px; margin-left: 5px;">
-            <button class="addonpack-block" style="display:inline-block; width:auto; padding: 2px 10px; margin-left: 5px; height: 20px;" onclick="window.damageSystem.fail('${failId}')">FAIL</button>
+        <div style="margin-bottom: 16px; padding: 10px; background: rgba(100,200,255,0.03); border-radius: 10px; border: 1px solid rgba(100,200,255,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h2 style="font-size: 13px; font-weight: 700; margin: 0; color: #fff; letter-spacing: 0.3px;">${title}</h2>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 500;">CHANCE/MIN:</span>
+                    <input disabled id="input${id}" value="0%" class="addonpack-input" style="width: 45px;">
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <input type="range" value="0" min="0" max="1" step="0.001" class="addonpack-range" id="slide${id}" 
+                       oninput="let val = (parseFloat(this.value)*100).toFixed(1); document.getElementById('input${id}').value = val + '%'; window.damageSystem.chances.${objectPath} = parseFloat(this.value);">
+                <button class="addonpack-btn danger" style="padding: 4px 12px; font-size: 10px; height: 26px;" onclick="window.damageSystem.fail('${failId}')">FORCE FAIL</button>
+            </div>
         </div>`;
     }
 
@@ -322,7 +327,7 @@
             menu = document.createElement("div");
             menu.id = "geofs-failure-menu";
             menu.className = "addonpack-card";
-            menu.style.width = "400px";
+            menu.style.width = "420px";
             menu.style.left = "20px";
             menu.style.top = "80px";
             menu.style.bottom = "auto";
@@ -330,64 +335,52 @@
             // Header
             let htmlContent = `
                 <div class="addonpack-card-header">
-                    <span>Failures & Emergencies</span>
-                    <button onclick="document.getElementById('geofs-failure-menu').classList.remove('active')" style="background:none; border:none; color:white; cursor:pointer;">✕</button>
+                    <span>⚠️ Failure Simulator v3.9</span>
+                    <button onclick="document.getElementById('geofs-failure-menu').classList.remove('active')" style="background:none; border:none; color:rgba(255,255,255,0.5); cursor:pointer; font-size:16px; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">✕</button>
                 </div>
-                <div class="addonpack-card-content" style="max-height: 65vh; overflow-y: auto; padding-right: 10px;">
-                    <p style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 0;">Note: Some failures may require a manual refresh of the page.</p>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <button class="addonpack-sub-item" id="enBtn" style="flex: 1; background: rgba(34,197,94,0.2); border-color: #22c55e;" onclick="window.damageSystem.enabled=true; window.damageSystem.tick(); this.style.display='none';">Enable Probability</button>
-                        <button class="addonpack-sub-item" style="flex: 1; background: rgba(239,68,68,0.2); border-color: #ef4444;" onclick="window.damageSystem.reset()">RESET ALL</button>
+                <div class="addonpack-card-content" style="max-height: 70vh; overflow-y: auto; padding: 20px; scrollbar-width: thin; scrollbar-color: rgba(100,200,255,0.2) transparent;">
+                    <div style="display: flex; gap: 12px; margin-bottom: 24px; position: sticky; top: 0; background: rgba(15, 25, 45, 0.95); padding-bottom: 15px; z-index: 10; border-bottom: 1px solid rgba(100,200,255,0.1); backdrop-filter: blur(8px);">
+                        <button class="addonpack-btn success" id="enBtn" style="flex: 1;" onclick="window.damageSystem.enabled=true; window.damageSystem.tick(); this.style.display='none';">ENABLE SIM</button>
+                        <button class="addonpack-btn danger" style="flex: 1;" onclick="window.damageSystem.reset()">RESET ALL</button>
                     </div>
             `;
 
-            const h1Style = "font-size: 16px; color: #64c8ff; margin: 15px 0 10px 0; border-bottom: 1px solid rgba(100,200,255,0.2); padding-bottom: 4px; text-transform: uppercase; letter-spacing: 1px;";
+            const h1Style = "font-size: 11px; font-weight: 800; color: #64c8ff; margin: 25px 0 12px 0; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 10px;";
+            const h1Span = "<span style='flex: 1; height: 1px; background: linear-gradient(to right, rgba(100,200,255,0.3), transparent);'></span>";
 
-            // Landing Gear
-            htmlContent += `<h1 style="${h1Style}">Landing Gear</h1>`;
-            htmlContent += buildSliderBlock("Front", "GearF", "gearFront", "landingGear.front");
-            htmlContent += buildSliderBlock("Left", "GearL", "gearLeft", "landingGear.left");
-            htmlContent += buildSliderBlock("Right", "GearR", "gearRight", "landingGear.right");
+            // Sections
+            htmlContent += `<h1 style="${h1Style}">Landing Gear ${h1Span}</h1>`;
+            htmlContent += buildSliderBlock("Nose/Tail Gear", "GearF", "gearFront", "landingGear.front");
+            htmlContent += buildSliderBlock("Main Gear (Left)", "GearL", "gearLeft", "landingGear.left");
+            htmlContent += buildSliderBlock("Main Gear (Right)", "GearR", "gearRight", "landingGear.right");
 
-            // Fuel
-            htmlContent += `<h1 style="${h1Style}">Fuel Leak</h1>`;
-            htmlContent += buildSliderBlock("System Status", "Fuel", "fuelLeak", "fuelLeak");
+            htmlContent += `<h1 style="${h1Style}">Fuel Systems ${h1Span}</h1>`;
+            htmlContent += buildSliderBlock("Fuel Tank Leak", "Fuel", "fuelLeak", "fuelLeak");
 
-            // Flight Control
-            htmlContent += `<h1 style="${h1Style}">Flight Control</h1>`;
-            htmlContent += buildSliderBlock("Ailerons", "Ail", "ailerons", "flightCtrl.ailerons");
-            htmlContent += buildSliderBlock("Elevators", "Elev", "elevators", "flightCtrl.elevators");
-            htmlContent += buildSliderBlock("Rudder", "Rud", "rudder", "flightCtrl.rudder");
+            htmlContent += `<h1 style="${h1Style}">Flight Control Surfaces ${h1Span}</h1>`;
+            htmlContent += buildSliderBlock("Aileron Jam", "Ail", "ailerons", "flightCtrl.ailerons");
+            htmlContent += buildSliderBlock("Elevator Jam", "Elev", "elevators", "flightCtrl.elevators");
+            htmlContent += buildSliderBlock("Rudder Jam", "Rud", "rudder", "flightCtrl.rudder");
 
-            // Electrical
-            htmlContent += `<h1 style="${h1Style}">Electrical</h1>`;
-            htmlContent += buildSliderBlock("Main Bus", "Elec", "electrical", "electrical");
+            htmlContent += `<h1 style="${h1Style}">Avionics & Power ${h1Span}</h1>`;
+            htmlContent += buildSliderBlock("Main Electrical Bus", "Elec", "electrical", "electrical");
 
-            // Structural
-            htmlContent += `<h1 style="${h1Style}">Structural</h1>`;
-            htmlContent += buildSliderBlock("Airframe Stress", "Struct", "structural", "structural");
+            htmlContent += `<h1 style="${h1Style}">Airframe & Hyd ${h1Span}</h1>`;
+            htmlContent += buildSliderBlock("Structural Fatigue", "Struct", "structural", "structural");
+            htmlContent += buildSliderBlock("Flaps Actuator", "Flap", "flaps", "hydraulic.flaps");
+            htmlContent += buildSliderBlock("Wheel Brakes", "Brake", "brakes", "hydraulic.brakes");
+            htmlContent += buildSliderBlock("Ground Spoilers", "Spoil", "spoilers", "hydraulic.spoilers");
 
-            // Hydraulic
-            htmlContent += `<h1 style="${h1Style}">Hydraulic</h1>`;
-            htmlContent += buildSliderBlock("Flaps", "Flap", "flaps", "hydraulic.flaps");
-            htmlContent += buildSliderBlock("Brakes", "Brake", "brakes", "hydraulic.brakes");
-            htmlContent += buildSliderBlock("Spoilers", "Spoil", "spoilers", "hydraulic.spoilers");
+            htmlContent += `<h1 style="${h1Style}">Environment ${h1Span}</h1>`;
+            htmlContent += buildSliderBlock("Cabin Pressurization", "Press", "pressurization", "pressurization");
+            htmlContent += buildSliderBlock("MCAS Error", "MCAS", "mcas", "mcas");
 
-            // Pressurization
-            htmlContent += `<h1 style="${h1Style}">Cabin Pressurization</h1>`;
-            htmlContent += buildSliderBlock("Seal Integrity", "Press", "pressurization", "pressurization");
-
-            // MCAS
-            htmlContent += `<h1 style="${h1Style}">MCAS</h1>`;
-            htmlContent += buildSliderBlock("Trim System", "MCAS", "mcas", "mcas");
-
-            // Engines
-            htmlContent += `<h1 style="${h1Style}">Engines</h1>`;
+            htmlContent += `<h1 style="${h1Style}">Engine Powerplants ${h1Span}</h1>`;
             for (let i = 0; i < window.geofs.aircraft.instance.engines.length; i++) {
-                htmlContent += buildSliderBlock(`Engine ${i+1}`, `Eng${i}`, `engine${i}`, `engines[${i}]`);
+                htmlContent += buildSliderBlock(`Engine ${i+1} Failure`, `Eng${i}`, `engine${i}`, `engines[${i}]`);
             }
 
-            htmlContent += `</div>`; // Close content div
+            htmlContent += `</div>`;
             menu.innerHTML = htmlContent;
             document.body.appendChild(menu);
 
