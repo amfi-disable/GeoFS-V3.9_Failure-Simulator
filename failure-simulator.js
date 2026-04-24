@@ -98,12 +98,14 @@
                         if (!this.fails.landingGear.front) {
                             this.notify("Nose gear failure");
                             this.fails.landingGear.front = true;
-                            let fG = 2; // Legacy default
-                            for (let i = 0; i < ac.suspensions.length; i++) {
-                                let s = ac.suspensions[i];
-                                if (s.name.toLowerCase().includes("front") || s.name.toLowerCase().includes("nose") || s.name.toLowerCase().includes("tail")) fG = i;
-                            }
-                            this.failures.set("gearFront", setInterval(() => { if (ac.suspensions[fG]) ac.suspensions[fG].collisionPoints[0][2] = 30; }, 1000));
+                            const indices = [];
+                            ac.suspensions.forEach((s, i) => {
+                                if (s.name.toLowerCase().includes("front") || s.name.toLowerCase().includes("nose") || s.name.toLowerCase().includes("tail") || (s.localCollisionPoint[0] > 1.5 && Math.abs(s.localCollisionPoint[1]) < 0.8)) indices.push(i);
+                            });
+                            if (indices.length === 0 && ac.suspensions[2]) indices.push(2);
+                            this.failures.set("gearFront", setInterval(() => {
+                                indices.forEach(idx => { if (ac.suspensions[idx]) ac.suspensions[idx].collisionPoints[0][2] = 30; });
+                            }, 1000));
                         }
                         break;
 
@@ -111,12 +113,14 @@
                         if (!this.fails.landingGear.left) {
                             this.notify("Left gear failure");
                             this.fails.landingGear.left = true;
-                            let lG = 0; // Legacy default
-                            for (let i = 0; i < ac.suspensions.length; i++) {
-                                let s = ac.suspensions[i];
-                                if (s.name.toLowerCase().includes("left") || s.name.toLowerCase().includes("l")) lG = i;
-                            }
-                            this.failures.set("gearLeft", setInterval(() => { if (ac.suspensions[lG]) ac.suspensions[lG].collisionPoints[0][2] = 30; }, 1000));
+                            const indices = [];
+                            ac.suspensions.forEach((s, i) => {
+                                if (s.name.toLowerCase().includes("left") || s.name.toLowerCase().includes("l") || (s.localCollisionPoint[1] > 0.8 && s.localCollisionPoint[0] < 1.5)) indices.push(i);
+                            });
+                            if (indices.length === 0 && ac.suspensions[0]) indices.push(0);
+                            this.failures.set("gearLeft", setInterval(() => {
+                                indices.forEach(idx => { if (ac.suspensions[idx]) ac.suspensions[idx].collisionPoints[0][2] = 30; });
+                            }, 1000));
                         }
                         break;
 
@@ -124,12 +128,14 @@
                         if (!this.fails.landingGear.right) {
                             this.notify("Right gear failure");
                             this.fails.landingGear.right = true;
-                            let rG = 1; // Legacy default
-                            for (let i = 0; i < ac.suspensions.length; i++) {
-                                let s = ac.suspensions[i];
-                                if (s.name.toLowerCase().includes("right") || s.name.toLowerCase().includes("r_g")) rG = i;
-                            }
-                            this.failures.set("gearRight", setInterval(() => { if (ac.suspensions[rG]) ac.suspensions[rG].collisionPoints[0][2] = 30; }, 1000));
+                            const indices = [];
+                            ac.suspensions.forEach((s, i) => {
+                                if (s.name.toLowerCase().includes("right") || s.name.toLowerCase().includes("r_g") || (s.localCollisionPoint[1] < -0.8 && s.localCollisionPoint[0] < 1.5)) indices.push(i);
+                            });
+                            if (indices.length === 0 && ac.suspensions[1]) indices.push(1);
+                            this.failures.set("gearRight", setInterval(() => {
+                                indices.forEach(idx => { if (ac.suspensions[idx]) ac.suspensions[idx].collisionPoints[0][2] = 30; });
+                            }, 1000));
                         }
                         break;
 
