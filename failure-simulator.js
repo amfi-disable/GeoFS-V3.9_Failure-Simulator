@@ -1,17 +1,12 @@
-/**
- * GeoFS-V3.9_Failure-Simulator
- * Complete integration of advanced failure mechanics and probability sliders.
- * Upgraded to the GeoFS-V3.9 Design System glassmorphic UI.
- */
-
 (function() {
     'use strict';
 
     class DamageSystem {
         constructor() {
-            this.ac = window.geofs.aircraft.instance;
-            this.aId = this.ac.id;
-            this.failures = new Map(); // Map to hold intervals by system ID
+            const ac = window.geofs.aircraft.instance;
+            this.aId = ac.id;
+            this.enabled = false;
+            this.failures = new Map(); // SystemID -> {id: interval/timeout, type: 'int'|'time'|'fx'}
             this.mcasTime = 0;
             
             this.fails = {
@@ -21,166 +16,154 @@
                 electrical: false,
                 structural: false,
                 hydraulic: { flaps: false, brakes: false, spoilers: false },
-                pitotStatic: false,
                 pressurization: false,
-                engines: [],
-                mcas: false
+                mcas: false,
+                engines: []
             };
-            
+
             this.chances = {
-                landingGear: { front: 0, left: 0, right: 0 },
+                landingGear: { gearFront: 0, left: 0, right: 0 },
                 fuelLeak: 0,
                 flightCtrl: { ailerons: 0, elevators: 0, rudder: 0 },
                 electrical: 0,
                 structural: 0,
                 hydraulic: { flaps: 0, brakes: 0, spoilers: 0 },
-                pitotStatic: 0,
                 pressurization: 0,
-                engines: [],
-                mcas: 0
+                mcas: 0,
+                engines: []
             };
 
-            for (let i = 0; i < this.ac.engines.length; i++) {
-                this.fails.engines.push(false);
+            for (let i = 0; i < ac.engines.length; i++) {
+                this.fails.engines.push({i: false});
                 this.chances.engines.push(0);
+            }
+        }
+
+        notify(text, type = "error") {
+            if (window.vNotify) {
+                vNotify[type]({text: text});
+            } else {
+                alert(text);
             }
         }
 
         fail(system) {
             const ac = window.geofs.aircraft.instance;
-            const ngin_l = ac.engines.length;
             
-            if (this.fails[system] === true) return; // Already failed
-
-            // Engine Failures
-            for (let i = 0; i < ngin_l; i++) {
-                if (system === ("engine" + i) && !this.fails.engines[i]) {
-                    if (window.vNotify) vNotify.error({text: `Engine ${i+1} failed!`});
-                    else alert(`Engine ${i+1} failed!`);
-                    
-                    this.fails.engines[i] = true;
+            // Engines
+            for (let i = 0; i < ac.engines.length; i++) {
+                if (system === ("engine" + i) && !this.fails.engines[i].i) {
+                    this.notify(`Engine ${i+1} failed!`);
+                    this.fails.engines[i].i = true;
+                    ac.engines[i]._p_thrust = ac.engines[i].thrust; // Save original
                     ac.engines[i].thrust = 0;
                     
-                    try {
-                        new window.geofs.fx.ParticleEmitter({
-                            off: 0,
-                            anchor: ac.engines[0].points.contrailAnchor || {worldPosition: ac.engines[0].object3d.worldPosition},
-                            duration: 1E10, rate: .03, life: 1E4, easing: "easeOutQuart",
-                            startScale: .01, endScale: .2, randomizeStartScale: .01, randomizeEndScale: .15,
-                            startOpacity: 1, endOpacity: .2, startRotation: "random", texture: "whitesmoke"
-                        });
-                        this.failures.push(setInterval(() => {
-                            window.geofs.fx.setParticlesColor(new window.Cesium.Color(0.1, 0.1, 0.1, 1));
-                            ac.engines[i].thrust = 0; 
-                        }, 20));
-                    } catch(e) {}
+                    const emitter = new window.geofs.fx.ParticleEmitter({
+                        off: 0,
+                        anchor: ac.engines[i].points.contrailAnchor || {worldPosition: ac.engines[i].object3d.worldPosition},
+                        duration: 1E10, rate: .03, life: 1E4, easing: "easeOutQuart",
+                        startScale: .01, endScale: .2, randomizeStartScale: .01, randomizeEndScale: .15,
+                        startOpacity: 1, endOpacity: .2, startRotation: "random", texture: "whitesmoke"
+                    });
+                    
+                    const colorInt = setInterval(() => {
+                        window.geofs.fx.setParticlesColor(new window.Cesium.Color(0.1, 0.1, 0.1, 1));
+                    }, 20);
+                    
+                    this.failures.set(`engine${i}_emitter`, emitter);
+                    this.failures.set(`engine${i}_color`, colorInt);
                 }
             }
 
-            // System Failures
             if (!system.includes("engine")) {
                 switch(system) {
                     case "fuelLeak":
                         if (!this.fails.fuelLeak) {
-                            if (window.vNotify) vNotify.error({text: "Fuel leak! 2 minutes of fuel remaining"});
-                            else alert("Fuel leak! 2 minutes of fuel remaining");
+                            this.notify("Fuel leak! 2 minutes of fuel remaining");
                             this.fails.fuelLeak = true;
-                            let leakTimeout = setTimeout(() => {
-                                this.failures.set("fuelLeak_engineKill", setInterval(() => { ac.stopEngine(); }, 1000));
+                            const leakTimer = setTimeout(() => {
+                                const killInt = setInterval(() => { ac.stopEngine(); }, 1000);
+                                this.failures.set("fuelLeak_kill", killInt);
                             }, 120000);
-                            this.failures.set("fuelLeak", leakTimeout);
+                            this.failures.set("fuelLeak", leakTimer);
                         }
                         break;
 
                     case "gearFront":
                         if (!this.fails.landingGear.front) {
-                            if (window.vNotify) vNotify.error({text: "Nose/Tail Gear Failure"});
+                            this.notify("Nose gear failure");
                             this.fails.landingGear.front = true;
-                            let fGs = [];
+                            let fG = -1;
                             for (let i = 0; i < ac.suspensions.length; i++) {
                                 let s = ac.suspensions[i];
-                                if (s.name.toLowerCase().includes("front") || s.name.toLowerCase().includes("nose") || (s.localCollisionPoint[0] > 1.5 && Math.abs(s.localCollisionPoint[1]) < 0.8)) fGs.push(i);
+                                if (s.name.includes("front") || s.name.includes("nose") || s.name.includes("tail") || (s.localCollisionPoint[0] > 1.5 && Math.abs(s.localCollisionPoint[1]) < 0.8)) fG = i;
                             }
-                            if (fGs.length > 0) {
-                                this.failures.set("gearFront", setInterval(() => { fGs.forEach(idx => { ac.suspensions[idx].collisionPoints[0][2] = 30; }); }, 50));
-                            }
+                            if (fG !== -1) this.failures.set("gearFront", setInterval(() => { ac.suspensions[fG].collisionPoints[0][2] = 30; }, 1000));
                         }
                         break;
 
                     case "gearLeft":
                         if (!this.fails.landingGear.left) {
-                            if (window.vNotify) vNotify.error({text: "Left Main Gear Failure"});
+                            this.notify("Left gear failure");
                             this.fails.landingGear.left = true;
-                            let lGs = [];
+                            let lG = -1;
                             for (let i = 0; i < ac.suspensions.length; i++) {
                                 let s = ac.suspensions[i];
-                                if (s.name.toLowerCase().includes("left") || (s.localCollisionPoint[1] > 0.8 && s.localCollisionPoint[0] < 1.5)) lGs.push(i);
+                                if (s.name.includes("left") || s.name.includes("l") || (s.localCollisionPoint[1] > 0.8 && s.localCollisionPoint[0] < 1.5)) lG = i;
                             }
-                            if (lGs.length > 0) {
-                                this.failures.set("gearLeft", setInterval(() => { lGs.forEach(idx => { ac.suspensions[idx].collisionPoints[0][2] = 30; }); }, 50));
-                            }
+                            if (lG !== -1) this.failures.set("gearLeft", setInterval(() => { ac.suspensions[lG].collisionPoints[0][2] = 30; }, 1000));
                         }
                         break;
 
                     case "gearRight":
                         if (!this.fails.landingGear.right) {
-                            if (window.vNotify) vNotify.error({text: "Right Main Gear Failure"});
+                            this.notify("Right gear failure");
                             this.fails.landingGear.right = true;
-                            let rGs = [];
+                            let rG = -1;
                             for (let i = 0; i < ac.suspensions.length; i++) {
                                 let s = ac.suspensions[i];
-                                if (s.name.toLowerCase().includes("right") || (s.localCollisionPoint[1] < -0.8 && s.localCollisionPoint[0] < 1.5)) rGs.push(i);
+                                if (s.name.includes("right") || s.name.includes("r_g") || (s.localCollisionPoint[1] < -0.8 && s.localCollisionPoint[0] < 1.5)) rG = i;
                             }
-                            if (rGs.length > 0) {
-                                this.failures.set("gearRight", setInterval(() => { rGs.forEach(idx => { ac.suspensions[idx].collisionPoints[0][2] = 30; }); }, 50));
-                            }
+                            if (rG !== -1) this.failures.set("gearRight", setInterval(() => { ac.suspensions[rG].collisionPoints[0][2] = 30; }, 1000));
                         }
                         break;
 
                     case "ailerons":
                         if (!this.fails.flightCtrl.ailerons) {
-                            if (window.vNotify) vNotify.error({text: "Flight control failure (ailerons)"});
+                            this.notify("Flight control failure (ailerons)");
                             this.fails.flightCtrl.ailerons = true;
                             this.failures.set("ailerons", setInterval(() => {
-                                for (let t in ac.airfoils) {
-                                    if (ac.airfoils[t].name.toLowerCase().includes("aileron")) ac.airfoils[t].object3d._scale = [0,0,0];
-                                }
+                                ac.airfoils.forEach(a => { if (a.name.toLowerCase().includes("aileron")) a.object3d._scale = [0,0,0]; });
                             }, 1000));
                         }
                         break;
 
                     case "elevators":
                         if (!this.fails.flightCtrl.elevators) {
-                            if (window.vNotify) vNotify.error({text: "Flight control failure (elevators)"});
+                            this.notify("Flight control failure (elevators)");
                             this.fails.flightCtrl.elevators = true;
                             this.failures.set("elevators", setInterval(() => {
-                                for (let t in ac.airfoils) {
-                                    if (ac.airfoils[t].name.toLowerCase().includes("elevator")) ac.airfoils[t].object3d._scale = [0,0,0];
-                                }
+                                ac.airfoils.forEach(a => { if (a.name.toLowerCase().includes("elevator")) a.object3d._scale = [0,0,0]; });
                             }, 1000));
                         }
                         break;
 
                     case "rudder":
                         if (!this.fails.flightCtrl.rudder) {
-                            if (window.vNotify) vNotify.error({text: "Flight control failure (rudder)"});
+                            this.notify("Flight control failure (rudder)");
                             this.fails.flightCtrl.rudder = true;
                             this.failures.set("rudder", setInterval(() => {
-                                for (let t in ac.airfoils) {
-                                    if (ac.airfoils[t].name.toLowerCase().includes("rudder")) ac.airfoils[t].object3d._scale = [0,0,0];
-                                }
+                                ac.airfoils.forEach(a => { if (a.name.toLowerCase().includes("rudder")) a.object3d._scale = [0,0,0]; });
                             }, 1000));
                         }
                         break;
 
                     case "electrical":
                         if (!this.fails.electrical) {
-                            if (window.vNotify) vNotify.error({text: "Electrical failure"});
+                            this.notify("Electrical failure");
                             this.fails.electrical = true;
                             this.failures.set("electrical", setInterval(() => {
-                                for (let i = 1; i <= 5; i++) {
-                                    if (ac.cockpitSetup && ac.cockpitSetup.parts[i]) ac.cockpitSetup.parts[i].object3d._scale = [0,0,0];
-                                }
+                                if (ac.cockpitSetup) ac.cockpitSetup.parts.forEach((p, idx) => { if(idx >= 1 && idx <= 5 && p.object3d) p.object3d._scale = [0,0,0]; });
                                 window.geofs.autopilot.turnOff();
                                 if (window.instruments) window.instruments.hide();
                             }, 1000));
@@ -189,7 +172,7 @@
 
                     case "structural":
                         if (!this.fails.structural) {
-                            if (window.vNotify) vNotify.error({text: "Significant structural damage detected"});
+                            this.notify("Significant structural damage detected");
                             this.fails.structural = true;
                             this.failures.set("structural", setInterval(() => { window.weather.definition.turbulences = 3; }, 1000));
                         }
@@ -197,7 +180,7 @@
 
                     case "flaps":
                         if (!this.fails.hydraulic.flaps) {
-                            if (window.vNotify) vNotify.error({text: "Hydraulic failure (flaps)"});
+                            this.notify("Hydraulic failure (flaps)");
                             this.fails.hydraulic.flaps = true;
                             this.failures.set("flaps", setInterval(() => {
                                 window.controls.flaps.target = Math.floor(0.6822525 * (window.geofs.animation.values.flapsSteps * 2));
@@ -208,7 +191,7 @@
 
                     case "brakes":
                         if (!this.fails.hydraulic.brakes) {
-                            if (window.vNotify) vNotify.error({text: "Hydraulic failure (brakes)"});
+                            this.notify("Hydraulic failure (brakes)");
                             this.fails.hydraulic.brakes = true;
                             this.failures.set("brakes", setInterval(() => { window.controls.brakes = 0; }, 500));
                         }
@@ -216,7 +199,7 @@
 
                     case "spoilers":
                         if (!this.fails.hydraulic.spoilers) {
-                            if (window.vNotify) vNotify.error({text: "Hydraulic failure (spoilers)"});
+                            this.notify("Hydraulic failure (spoilers)");
                             this.fails.hydraulic.spoilers = true;
                             this.failures.set("spoilers", setInterval(() => {
                                 window.controls.airbrakes.target = 0.2;
@@ -227,7 +210,7 @@
 
                     case "pressurization":
                         if (!this.fails.pressurization) {
-                            if (window.vNotify) vNotify.error({text: "Cabin depressurization! Get at or below 9,000 ft MSL!"});
+                            this.notify("Cabin depressurization! Get at or below 9,000 ft MSL!");
                             this.fails.pressurization = true;
                             this.failures.set("pressurization", setInterval(() => {
                                 if (window.geofs.animation.values.altitude > 9000) {
@@ -241,7 +224,6 @@
 
                     case "mcas":
                         if (!this.fails.mcas) {
-                            if (window.vNotify) vNotify.error({text: "MCAS failure! Uncommanded nose-down trim."});
                             this.fails.mcas = true;
                             this.mcasTime = Date.now();
                             this.mcasRandT = Math.floor(Math.random()*10000);
@@ -270,30 +252,35 @@
 
         fix(system) {
             const ac = window.geofs.aircraft.instance;
+            
             if (this.failures.has(system)) {
-                clearInterval(this.failures.get(system));
+                let item = this.failures.get(system);
+                if (typeof item === "number") clearInterval(item);
+                else if (item && typeof item.destroy === "function") item.destroy();
                 this.failures.delete(system);
             }
-            
-            // System-specific recovery logic
+            if (this.failures.has(`${system}_kill`)) { clearInterval(this.failures.get(`${system}_kill`)); this.failures.delete(`${system}_kill`); }
+
             if (system.includes("engine")) {
                 let idx = parseInt(system.replace("engine", ""));
-                this.fails.engines[idx] = false;
-                ac.engines[idx].thrust = ac.engines[idx].p_thrust || 50000; 
-                if (window.vNotify) vNotify.success({text: `Engine ${idx+1} Restored.`});
+                this.fails.engines[idx].i = false;
+                ac.engines[idx].thrust = ac.engines[idx]._p_thrust || 50000;
+                if (this.failures.has(`engine${idx}_emitter`)) { this.failures.get(`engine${idx}_emitter`).destroy(); this.failures.delete(`engine${idx}_emitter`); }
+                if (this.failures.has(`engine${idx}_color`)) { clearInterval(this.failures.get(`engine${idx}_color`)); this.failures.delete(`engine${idx}_color`); }
+                this.notify(`Engine ${idx+1} restored.`, "success");
             } else {
                 switch(system) {
                     case "gearFront": 
                         this.fails.landingGear.front = false; 
-                        ac.suspensions.forEach(s => { if(s.name.toLowerCase().includes("front") || s.name.toLowerCase().includes("nose") || (s.localCollisionPoint[0] > 1.5 && Math.abs(s.localCollisionPoint[1]) < 0.8)) s.collisionPoints[0][2] = 0; });
+                        ac.suspensions.forEach(s => { if(s.name.includes("front") || s.name.includes("nose") || s.name.includes("tail") || (s.localCollisionPoint[0] > 1.5 && Math.abs(s.localCollisionPoint[1]) < 0.8)) s.collisionPoints[0][2] = 0; });
                         break;
                     case "gearLeft": 
                         this.fails.landingGear.left = false; 
-                        ac.suspensions.forEach(s => { if(s.name.toLowerCase().includes("left") || (s.localCollisionPoint[1] > 0.8 && s.localCollisionPoint[0] < 1.5)) s.collisionPoints[0][2] = 0; });
+                        ac.suspensions.forEach(s => { if(s.name.includes("left") || s.name.includes("l") || (s.localCollisionPoint[1] > 0.8 && s.localCollisionPoint[0] < 1.5)) s.collisionPoints[0][2] = 0; });
                         break;
                     case "gearRight": 
                         this.fails.landingGear.right = false; 
-                        ac.suspensions.forEach(s => { if(s.name.toLowerCase().includes("right") || (s.localCollisionPoint[1] < -0.8 && s.localCollisionPoint[0] < 1.5)) s.collisionPoints[0][2] = 0; });
+                        ac.suspensions.forEach(s => { if(s.name.includes("right") || s.name.includes("r_g") || (s.localCollisionPoint[1] < -0.8 && s.localCollisionPoint[0] < 1.5)) s.collisionPoints[0][2] = 0; });
                         break;
                     case "fuelLeak": this.fails.fuelLeak = false; break;
                     case "ailerons": 
@@ -313,51 +300,30 @@
                         if (ac.cockpitSetup) ac.cockpitSetup.parts.forEach(p => { if(p && p.object3d) p.object3d._scale = [1,1,1]; });
                         if (window.instruments) window.instruments.show();
                         break;
-                    case "structural": 
-                        this.fails.structural = false; 
-                        window.weather.definition.turbulences = 0;
-                        break;
+                    case "structural": this.fails.structural = false; window.weather.definition.turbulences = 0; break;
                     case "flaps": this.fails.hydraulic.flaps = false; break;
                     case "brakes": this.fails.hydraulic.brakes = false; break;
                     case "spoilers": this.fails.hydraulic.spoilers = false; break;
-                    case "pressurization": 
-                        this.fails.pressurization = false; 
-                        window.weather.definition.turbulences = 0;
-                        break;
-                    case "mcas": 
-                        this.fails.mcas = false; 
-                        window.controls.elevatorTrimMin = -1;
-                        break;
+                    case "pressurization": this.fails.pressurization = false; window.weather.definition.turbulences = 0; break;
+                    case "mcas": this.fails.mcas = false; window.controls.elevatorTrimMin = -1; break;
                 }
-                if (window.vNotify) vNotify.success({text: `${system} restored.`});
+                this.notify(`${system} restored.`, "success");
             }
         }
 
         tick() {
             if (this.enabled) {
-                // General Systems
+                // Probabilities
+                for (let i in this.chances.landingGear) {
+                    if (Math.random() < this.chances.landingGear[i]) this.fail(i === "gearFront" ? "gearFront" : (i === "left" ? "gearLeft" : "gearRight"));
+                }
                 for (let q in this.chances) {
                     if (typeof this.chances[q] === "number") {
                         if (Math.random() < this.chances[q]) this.fail(q);
-                    } else if (q !== "landingGear" && q !== "engines" && q !== "flightCtrl" && q !== "hydraulic") {
-                        for (let j in this.chances[q]) {
-                            if (Math.random() < this.chances[q][j]) this.fail(j);
-                        }
+                    } else if (q !== "landingGear" && q !== "engines") {
+                        for (let j in this.chances[q]) { if (Math.random() < this.chances[q][j]) this.fail(j); }
                     }
                 }
-                // Landing Gear
-                for (let i in this.chances.landingGear) {
-                    if (Math.random() < this.chances.landingGear[i]) this.fail("gear" + (i[0].toUpperCase() + i.substr(1)));
-                }
-                // Flight Control
-                for (let f in this.chances.flightCtrl) {
-                    if (Math.random() < this.chances.flightCtrl[f]) this.fail(f);
-                }
-                // Hydraulic
-                for (let h in this.chances.hydraulic) {
-                    if (Math.random() < this.chances.hydraulic[h]) this.fail(h);
-                }
-                // Engines
                 for (let e = 0; e < this.chances.engines.length; e++) {
                     if (Math.random() < this.chances.engines[e]) this.fail("engine" + e);
                 }
@@ -369,67 +335,49 @@
             this.enabled = !this.enabled;
             const btn = document.getElementById('enBtn');
             const sliders = document.querySelectorAll('.addonpack-range');
-            
             if (this.enabled) {
-                if (btn) {
-                    btn.innerText = "DISABLE SIM";
-                    btn.classList.remove('success');
-                    btn.classList.add('danger');
-                }
+                if (btn) { btn.innerText = "DISABLE PROBABILITY"; btn.classList.replace('success', 'danger'); }
                 sliders.forEach(s => s.disabled = true);
                 this.tick();
-                if (window.vNotify) vNotify.info({text: "Probability Simulation Active. Sliders locked."});
+                this.notify("Probability Enabled", "info");
             } else {
-                if (btn) {
-                    btn.innerText = "ENABLE SIM";
-                    btn.classList.remove('danger');
-                    btn.classList.add('success');
-                }
+                if (btn) { btn.innerText = "ENABLE PROBABILITY"; btn.classList.replace('danger', 'success'); }
                 sliders.forEach(s => s.disabled = false);
                 clearTimeout(this.tickInterval);
-                if (window.vNotify) vNotify.info({text: "Probability Simulation Disabled."});
+                this.notify("Probability Disabled", "info");
             }
         }
 
         failAll() {
             const ac = window.geofs.aircraft.instance;
-            // Landing Gear
-            this.fail("gearFront"); this.fail("gearLeft"); this.fail("gearRight");
-            // Systems
-            this.fail("fuelLeak"); this.fail("ailerons"); this.fail("elevators"); this.fail("rudder");
-            this.fail("electrical"); this.fail("structural"); this.fail("flaps"); this.fail("brakes");
-            this.fail("spoilers"); this.fail("pressurization"); this.fail("mcas");
-            // Engines
+            ["gearFront", "gearLeft", "gearRight", "fuelLeak", "ailerons", "elevators", "rudder", "electrical", "structural", "flaps", "brakes", "spoilers", "pressurization", "mcas"].forEach(s => this.fail(s));
             for (let i = 0; i < ac.engines.length; i++) this.fail("engine" + i);
-            if (window.vNotify) vNotify.warning({text: "EVERYTHING HAS FAILED."});
         }
 
         reset() {
             this.failures.forEach((val, key) => this.fix(key));
             if (this.enabled) this.toggleProbability();
-            if (window.instruments) window.instruments.show();
             window.weather.definition.turbulences = 0;
-            if (window.vNotify) vNotify.success({text: "All systems restored to 100%."});
+            if (window.instruments) window.instruments.show();
         }
     }
 
-    // Helper function to build the stylized glass UI blocks
     function buildSliderBlock(title, id, failId, objectPath) {
         return `
         <div style="margin-bottom: 16px; padding: 12px; background: rgba(100,200,255,0.03); border-radius: 12px; border: 1px solid rgba(100,200,255,0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h2 style="font-size: 13px; font-weight: 700; margin: 0; color: #fff; letter-spacing: 0.3px;">${title}</h2>
+                <h2 style="font-size: 13px; font-weight: 700; margin: 0; color: #fff;">${title}</h2>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 500;">CHANCE:</span>
+                    <span style="font-size: 10px; color: rgba(255,255,255,0.5);">CHANCE:</span>
                     <input disabled id="input${id}" value="0%" class="addonpack-input" style="width: 45px;">
                 </div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 <input type="range" value="0" min="0" max="1" step="0.001" class="addonpack-range" id="slide${id}" 
-                       oninput="let val = (parseFloat(this.value)*100).toFixed(1); document.getElementById('input${id}').value = val + '%'; window.damageSystem.chances.${objectPath} = parseFloat(this.value);">
+                       oninput="let v = (parseFloat(this.value)*100).toFixed(1); document.getElementById('input${id}').value = v + '%'; window.damageSystem.chances.${objectPath} = parseFloat(this.value);">
                 <div style="display: flex; gap: 8px;">
-                    <button class="addonpack-btn danger" style="flex: 1; padding: 4px; font-size: 10px; height: 24px;" onclick="window.damageSystem.fail('${failId}')">FAIL</button>
-                    <button class="addonpack-btn success" style="flex: 1; padding: 4px; font-size: 10px; height: 24px;" onclick="window.damageSystem.fix('${failId}')">FIX</button>
+                    <button class="addonpack-btn danger" style="flex: 1; height: 24px; font-size: 10px;" onclick="window.damageSystem.fail('${failId}')">FAIL</button>
+                    <button class="addonpack-btn success" style="flex: 1; height: 24px; font-size: 10px;" onclick="window.damageSystem.fix('${failId}')">FIX</button>
                 </div>
             </div>
         </div>`;
@@ -443,122 +391,74 @@
         }
 
         let menu = document.getElementById('geofs-failure-menu');
-        
         if (!menu) {
             menu = document.createElement("div");
             menu.id = "geofs-failure-menu";
             menu.className = "addonpack-card";
-            menu.style.width = "440px";
-            menu.style.left = "20px";
-            menu.style.top = "80px";
-            menu.style.bottom = "auto";
+            menu.style.width = "440px"; menu.style.left = "20px"; menu.style.top = "80px";
             
-            // Header
             let htmlContent = `
                 <div class="addonpack-card-header">
                     <span>⚠️ Failure Simulator v3.9</span>
-                    <button onclick="document.getElementById('geofs-failure-menu').classList.remove('active')" style="background:none; border:none; color:rgba(255,255,255,0.5); cursor:pointer; font-size:16px; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">✕</button>
+                    <button onclick="document.getElementById('geofs-failure-menu').classList.remove('active')" style="background:none; border:none; color:rgba(255,255,255,0.5); font-size:16px;">✕</button>
                 </div>
-                <div class="addonpack-card-content" style="max-height: 75vh; overflow-y: auto; padding: 20px; scrollbar-width: thin; scrollbar-color: rgba(100,200,255,0.2) transparent;">
+                <div class="addonpack-card-content" style="max-height: 75vh; overflow-y: auto; padding: 20px;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; position: sticky; top: -20px; background: rgba(15, 25, 45, 0.95); padding: 10px 0 15px 0; z-index: 10; border-bottom: 1px solid rgba(100,200,255,0.1); backdrop-filter: blur(12px);">
-                        <button class="addonpack-btn success" id="enBtn" style="grid-column: 1 / -1;" onclick="window.damageSystem.toggleProbability()">ENABLE SIMULATION</button>
+                        <button class="addonpack-btn success" id="enBtn" style="grid-column: 1 / -1;" onclick="window.damageSystem.toggleProbability()">ENABLE PROBABILITY</button>
                         <button class="addonpack-btn danger" onclick="window.damageSystem.failAll()">FAIL ALL</button>
                         <button class="addonpack-btn success" onclick="window.damageSystem.reset()">FIX ALL</button>
                     </div>
             `;
 
-            const h1Style = "font-size: 11px; font-weight: 800; color: #64c8ff; margin: 30px 0 15px 0; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 10px;";
-            const catBtnStyle = "padding: 2px 6px; font-size: 9px; font-weight: 900; border-radius: 4px; cursor: pointer; border: 1px solid;";
-            const h1Span = "<span style='flex: 1; height: 1px; background: linear-gradient(to right, rgba(100,200,255,0.2), transparent);'></span>";
+            const h1 = "font-size: 11px; font-weight: 800; color: #64c8ff; margin: 30px 0 15px 0; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 10px;";
+            const span = "<span style='flex: 1; height: 1px; background: linear-gradient(to right, rgba(100,200,255,0.2), transparent);'></span>";
+            const buildCat = (fails, fixes) => `<div style="display: flex; gap: 5px;"><button class="addonpack-btn danger" style="padding: 2px 6px; font-size: 9px; background: rgba(239,68,68,0.1);" onclick="${fails.map(f => `window.damageSystem.fail('${f}')`).join(';')}">X</button><button class="addonpack-btn success" style="padding: 2px 6px; font-size: 9px; background: rgba(34,197,94,0.1);" onclick="${fixes.map(f => `window.damageSystem.fix('${f}')`).join(';')}">✓</button></div>`;
 
-            const buildCatCtrl = (fails, fixes) => {
-                return `
-                <div style="display: flex; gap: 5px;">
-                    <button class="addonpack-btn danger" style="${catBtnStyle} background: rgba(239,68,68,0.1);" onclick="${fails.map(f => `window.damageSystem.fail('${f}')`).join(';')}">X</button>
-                    <button class="addonpack-btn success" style="${catBtnStyle} background: rgba(34,197,94,0.1);" onclick="${fixes.map(f => `window.damageSystem.fix('${f}')`).join(';')}">✓</button>
-                </div>`;
-            };
-
-            // Sections
-            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1Style}">Landing Gear ${h1Span}</h1> ${buildCatCtrl(['gearFront', 'gearLeft', 'gearRight'], ['gearFront', 'gearLeft', 'gearRight'])}</div>`;
-            htmlContent += buildSliderBlock("Nose/Tail Gear", "GearF", "gearFront", "landingGear.front");
+            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1}">Landing Gear ${span}</h1> ${buildCat(['gearFront', 'gearLeft', 'gearRight'], ['gearFront', 'gearLeft', 'gearRight'])}</div>`;
+            htmlContent += buildSliderBlock("Nose/Tail Gear", "GearF", "gearFront", "landingGear.gearFront");
             htmlContent += buildSliderBlock("Main Gear (Left)", "GearL", "gearLeft", "landingGear.left");
             htmlContent += buildSliderBlock("Main Gear (Right)", "GearR", "gearRight", "landingGear.right");
 
-            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1Style}">Fuel Systems ${h1Span}</h1> ${buildCatCtrl(['fuelLeak'], ['fuelLeak'])}</div>`;
+            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1}">Fuel & Systems ${span}</h1> ${buildCat(['fuelLeak'], ['fuelLeak'])}</div>`;
             htmlContent += buildSliderBlock("Fuel Tank Leak", "Fuel", "fuelLeak", "fuelLeak");
 
-            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1Style}">Flight Control Surfaces ${h1Span}</h1> ${buildCatCtrl(['ailerons', 'elevators', 'rudder'], ['ailerons', 'elevators', 'rudder'])}</div>`;
+            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1}">Flight Controls ${span}</h1> ${buildCat(['ailerons', 'elevators', 'rudder'], ['ailerons', 'elevators', 'rudder'])}</div>`;
             htmlContent += buildSliderBlock("Aileron Jam", "Ail", "ailerons", "flightCtrl.ailerons");
             htmlContent += buildSliderBlock("Elevator Jam", "Elev", "elevators", "flightCtrl.elevators");
             htmlContent += buildSliderBlock("Rudder Jam", "Rud", "rudder", "flightCtrl.rudder");
 
-            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1Style}">Avionics & Power ${h1Span}</h1> ${buildCatCtrl(['electrical'], ['electrical'])}</div>`;
+            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1}">Avionics ${span}</h1> ${buildCat(['electrical'], ['electrical'])}</div>`;
             htmlContent += buildSliderBlock("Main Electrical Bus", "Elec", "electrical", "electrical");
 
-            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1Style}">Airframe & Hyd ${h1Span}</h1> ${buildCatCtrl(['structural', 'flaps', 'brakes', 'spoilers'], ['structural', 'flaps', 'brakes', 'spoilers'])}</div>`;
-            htmlContent += buildSliderBlock("Structural Fatigue", "Struct", "structural", "structural");
-            htmlContent += buildSliderBlock("Flaps Actuator", "Flap", "flaps", "hydraulic.flaps");
-            htmlContent += buildSliderBlock("Wheel Brakes", "Brake", "brakes", "hydraulic.brakes");
+            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1}">Hydraulics ${span}</h1> ${buildCat(['flaps', 'brakes', 'spoilers'], ['flaps', 'brakes', 'spoilers'])}</div>`;
+            htmlContent += buildSliderBlock("Flaps Actuator", "Flaps", "flaps", "hydraulic.flaps");
+            htmlContent += buildSliderBlock("Wheel Brakes", "Brakes", "brakes", "hydraulic.brakes");
             htmlContent += buildSliderBlock("Ground Spoilers", "Spoil", "spoilers", "hydraulic.spoilers");
 
-            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1Style}">Environment ${h1Span}</h1> ${buildCatCtrl(['pressurization', 'mcas'], ['pressurization', 'mcas'])}</div>`;
+            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1}">Environment ${span}</h1> ${buildCat(['structural', 'pressurization', 'mcas'], ['structural', 'pressurization', 'mcas'])}</div>`;
+            htmlContent += buildSliderBlock("Structural Fatigue", "Struct", "structural", "structural");
             htmlContent += buildSliderBlock("Cabin Pressurization", "Press", "pressurization", "pressurization");
             htmlContent += buildSliderBlock("MCAS Error", "MCAS", "mcas", "mcas");
 
-            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1Style}">Engine Powerplants ${h1Span}</h1> ${buildCatCtrl(Array.from({length: window.geofs.aircraft.instance.engines.length}, (_, i) => `engine${i}`), Array.from({length: window.geofs.aircraft.instance.engines.length}, (_, i) => `engine${i}`))}</div>`;
-            for (let i = 0; i < window.geofs.aircraft.instance.engines.length; i++) {
-                htmlContent += buildSliderBlock(`Engine ${i+1} Failure`, `Eng${i}`, `engine${i}`, `engines[${i}]`);
-            }
+            htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1}">Engines ${span}</h1> ${buildCat(Array.from({length: geofs.aircraft.instance.engines.length}, (_, i) => `engine${i}`), Array.from({length: geofs.aircraft.instance.engines.length}, (_, i) => `engine${i}`))}</div>`;
+            for (let i = 0; i < geofs.aircraft.instance.engines.length; i++) htmlContent += buildSliderBlock(`Engine ${i+1}`, `Eng${i}`, `engine${i}`, `engines[${i}]`);
 
             htmlContent += `</div>`;
             menu.innerHTML = htmlContent;
             document.body.appendChild(menu);
-
-            if (window.initAddonDraggable) {
-                window.initAddonDraggable(menu);
-            }
+            if (window.initAddonDraggable) window.initAddonDraggable(menu);
         }
-        
         menu.classList.toggle('active');
     };
 
     window.initDamageSystem = function() {
-        if (window.damageSystemInitDone) return;
-        window.damageSystemInitDone = true;
-
-        const uiInterval = setInterval(() => {
-            if (document.querySelector('.geofs-ui-bottom') && !geofs.cautiousWithTerrain) {
-                clearInterval(uiInterval);
-
-                const failBtn = document.createElement('button');
-                failBtn.innerHTML = '⚠️ FAIL';
-                failBtn.className = 'geofs-button';
-                
-                // Position exactly 5px lower than the previous iteration
-                failBtn.style.position = 'fixed';
-                failBtn.style.bottom = '5px'; 
-                failBtn.style.right = '65px'; 
-                failBtn.style.zIndex = '10001';
-                
-                failBtn.style.background = 'rgba(255, 107, 107, 0.2)';
-                failBtn.style.color = '#ff6b6b';
-                failBtn.style.border = '1px solid rgba(255, 107, 107, 0.4)';
-                failBtn.style.padding = '5px 10px';
-                failBtn.style.fontWeight = 'bold';
-                failBtn.style.borderRadius = '5px';
-                failBtn.style.backdropFilter = 'blur(4px)';
-
-                failBtn.onclick = window.openDamageMenu;
-                document.body.appendChild(failBtn);
-                console.log("GeoFS [Damage]: UI Injected and Loaded.");
-            }
-        }, 1000);
+        if (document.getElementById('geofs-fail-btn')) return;
+        const btn = document.createElement('div');
+        btn.id = 'geofs-fail-btn';
+        btn.innerHTML = `<button class="addonpack-btn danger" style="position:fixed; right:20px; bottom:20px; z-index:10000;" onclick="window.openDamageMenu()">FAILURES</button>`;
+        document.body.appendChild(btn);
     };
 
-    if (window.SafeInit) {
-        window.SafeInit('Damage System', window.initDamageSystem);
-    } else {
-        window.initDamageSystem();
-    }
+    if (window.SafeInit) SafeInit("Failure Simulator", window.initDamageSystem);
+    else window.initDamageSystem();
 })();
