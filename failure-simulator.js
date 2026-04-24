@@ -224,6 +224,7 @@
 
                     case "mcas":
                         if (!this.fails.mcas) {
+                            this.notify("MCAS failure! Uncommanded nose-down trim detected.");
                             this.fails.mcas = true;
                             this.mcasTime = Date.now();
                             this.mcasRandT = Math.floor(Math.random()*10000);
