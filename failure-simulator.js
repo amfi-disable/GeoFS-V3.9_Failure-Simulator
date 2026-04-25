@@ -1,14 +1,16 @@
 (function() {
     'use strict';
 
-    class DamageSystem {
+    class FailureSimulatorPro {
         constructor() {
             const ac = window.geofs.aircraft.instance;
             this.aId = ac.id;
             this.enabled = false;
-            this.failures = new Map(); // SystemID -> {id: interval/timeout, type: 'int'|'time'|'fx'}
+            this.activeFailures = new Map(); // SystemID -> {id: interval/timeout, type: 'int'|'time'|'fx'}
             this.mcasTime = 0;
             
+            console.log("[GeoFS-V3.9_Failure-Simulator] Class initialized for aircraft ID:", this.aId);
+
             this.fails = {
                 landingGear: { front: false, left: false, right: false },
                 fuelLeak: false,
@@ -38,21 +40,24 @@
                 this.fails.engines.push({i: false});
                 this.chances.engines.push(0);
             }
+            console.log("[GeoFS-V3.9_Failure-Simulator] engine failure slots created:", numEngines);
         }
 
         notify(text, type = "error") {
+            const prefix = "[GeoFS-V3.9_Failure-Simulator]";
+            console.log(`${prefix} ${text}`);
             if (window.vNotify && typeof window.vNotify[type] === 'function') {
                 window.vNotify[type]({text: text});
             } else if (window.ui && window.ui.notification) {
                 window.ui.notification.show(text);
             } else {
-                console.log("[Failure Simulator] " + text);
                 try { alert(text); } catch(e) {}
             }
         }
 
         fail(system) {
             const ac = window.geofs.aircraft.instance;
+            console.log("[GeoFS-V3.9_Failure-Simulator] Triggering failure for:", system);
             
             // Engines
             const numEngines = (ac.engines && ac.engines.length) ? ac.engines.length : 0;
@@ -75,8 +80,8 @@
                         window.geofs.fx.setParticlesColor(new window.Cesium.Color(0.1, 0.1, 0.1, 1));
                     }, 20);
                     
-                    this.failures.set(`engine${i}_emitter`, emitter);
-                    this.failures.set(`engine${i}_color`, colorInt);
+                    this.activeFailures.set(`engine${i}_emitter`, emitter);
+                    this.activeFailures.set(`engine${i}_color`, colorInt);
                 }
             }
 
@@ -87,10 +92,11 @@
                             this.notify("Fuel leak! 2 minutes of fuel remaining.");
                             this.fails.fuelLeak = true;
                             const leakTimer = setTimeout(() => {
+                                console.log("[GeoFS-V3.9_Failure-Simulator] Fuel exhausted. Shutting down engines.");
                                 const killInt = setInterval(() => { ac.stopEngine(); }, 1000);
-                                this.failures.set("fuelLeak_kill", killInt);
+                                this.activeFailures.set("fuelLeak_kill", killInt);
                             }, 120000);
-                            this.failures.set("fuelLeak", leakTimer);
+                            this.activeFailures.set("fuelLeak", leakTimer);
                         }
                         break;
 
@@ -105,7 +111,7 @@
                                     fG = i;
                                 }
                             }
-                            this.failures.set("gearFront", setInterval(() => {
+                            this.activeFailures.set("gearFront", setInterval(() => {
                                 if (ac.suspensions[fG]) ac.suspensions[fG].collisionPoints[0][2] = 30;
                             }, 1000));
                         }
@@ -122,7 +128,7 @@
                                     lG = i;
                                 }
                             }
-                            this.failures.set("gearLeft", setInterval(() => {
+                            this.activeFailures.set("gearLeft", setInterval(() => {
                                 if (ac.suspensions[lG]) ac.suspensions[lG].collisionPoints[0][2] = 30;
                             }, 1000));
                         }
@@ -139,7 +145,7 @@
                                     rG = i;
                                 }
                             }
-                            this.failures.set("gearRight", setInterval(() => {
+                            this.activeFailures.set("gearRight", setInterval(() => {
                                 if (ac.suspensions[rG]) ac.suspensions[rG].collisionPoints[0][2] = 30;
                             }, 1000));
                         }
@@ -149,7 +155,7 @@
                         if (!this.fails.flightCtrl.ailerons) {
                             this.notify("Flight control failure (ailerons).");
                             this.fails.flightCtrl.ailerons = true;
-                            this.failures.set("ailerons", setInterval(() => {
+                            this.activeFailures.set("ailerons", setInterval(() => {
                                 ac.airfoils.forEach(a => { if (a.name.toLowerCase().includes("aileron")) a.object3d._scale = [0,0,0]; });
                             }, 1000));
                         }
@@ -159,7 +165,7 @@
                         if (!this.fails.flightCtrl.elevators) {
                             this.notify("Flight control failure (elevators).");
                             this.fails.flightCtrl.elevators = true;
-                            this.failures.set("elevators", setInterval(() => {
+                            this.activeFailures.set("elevators", setInterval(() => {
                                 ac.airfoils.forEach(a => { if (a.name.toLowerCase().includes("elevator")) a.object3d._scale = [0,0,0]; });
                             }, 1000));
                         }
@@ -169,7 +175,7 @@
                         if (!this.fails.flightCtrl.rudder) {
                             this.notify("Flight control failure (rudder).");
                             this.fails.flightCtrl.rudder = true;
-                            this.failures.set("rudder", setInterval(() => {
+                            this.activeFailures.set("rudder", setInterval(() => {
                                 ac.airfoils.forEach(a => { if (a.name.toLowerCase().includes("rudder")) a.object3d._scale = [0,0,0]; });
                             }, 1000));
                         }
@@ -179,7 +185,7 @@
                         if (!this.fails.electrical) {
                             this.notify("Electrical failure.");
                             this.fails.electrical = true;
-                            this.failures.set("electrical", setInterval(() => {
+                            this.activeFailures.set("electrical", setInterval(() => {
                                 if (ac.cockpitSetup) ac.cockpitSetup.parts.forEach((p, idx) => { if(idx >= 1 && idx <= 5 && p.object3d) p.object3d._scale = [0,0,0]; });
                                 window.geofs.autopilot.turnOff();
                                 if (window.instruments) window.instruments.hide();
@@ -191,7 +197,7 @@
                         if (!this.fails.structural) {
                             this.notify("Significant structural damage detected.");
                             this.fails.structural = true;
-                            this.failures.set("structural", setInterval(() => { window.weather.definition.turbulences = 3; }, 1000));
+                            this.activeFailures.set("structural", setInterval(() => { window.weather.definition.turbulences = 3; }, 1000));
                         }
                         break;
 
@@ -199,7 +205,7 @@
                         if (!this.fails.hydraulic.flaps) {
                             this.notify("Hydraulic failure (flaps).");
                             this.fails.hydraulic.flaps = true;
-                            this.failures.set("flaps", setInterval(() => {
+                            this.activeFailures.set("flaps", setInterval(() => {
                                 window.controls.flaps.target = Math.floor(0.6822525 * (window.geofs.animation.values.flapsSteps * 2));
                                 window.controls.flaps.delta = 20;
                             }, 1000));
@@ -210,7 +216,7 @@
                         if (!this.fails.hydraulic.brakes) {
                             this.notify("Hydraulic failure (brakes).");
                             this.fails.hydraulic.brakes = true;
-                            this.failures.set("brakes", setInterval(() => { window.controls.brakes = 0; }, 500));
+                            this.activeFailures.set("brakes", setInterval(() => { window.controls.brakes = 0; }, 500));
                         }
                         break;
 
@@ -218,7 +224,7 @@
                         if (!this.fails.hydraulic.spoilers) {
                             this.notify("Hydraulic failure (spoilers).");
                             this.fails.hydraulic.spoilers = true;
-                            this.failures.set("spoilers", setInterval(() => {
+                            this.activeFailures.set("spoilers", setInterval(() => {
                                 window.controls.airbrakes.target = 0.2;
                                 window.controls.airbrakes.delta = 20;
                             }, 1000));
@@ -229,7 +235,7 @@
                         if (!this.fails.pressurization) {
                             this.notify("Cabin depressurization! Get at or below 9,000 ft MSL!");
                             this.fails.pressurization = true;
-                            this.failures.set("pressurization", setInterval(() => {
+                            this.activeFailures.set("pressurization", setInterval(() => {
                                 if (window.geofs.animation.values.altitude > 9000) {
                                     window.weather.definition.turbulences = (window.geofs.animation.values.altitude - 9000) / 5200;
                                 } else {
@@ -247,7 +253,7 @@
                             this.mcasRandT = Math.floor(Math.random()*10000);
                             this.mcasActive = true;
                             window.controls.elevatorTrimMin = -10;
-                            this.failures.set("mcas", setInterval(() => {
+                            this.activeFailures.set("mcas", setInterval(() => {
                                 if (!window.geofs.autopilot.on && window.controls.flaps.position === 0 && this.fails.mcas) {
                                     if (this.mcasActive && (Date.now() <= this.mcasTime + this.mcasRandT)) {
                                         if (window.controls.elevatorTrim > window.controls.elevatorTrimMin) window.controls.elevatorTrim -= window.controls.elevatorTrimStep/10;
@@ -270,21 +276,22 @@
 
         fix(system) {
             const ac = window.geofs.aircraft.instance;
+            console.log("[GeoFS-V3.9_Failure-Simulator] Repairing system:", system);
             
-            if (this.failures.has(system)) {
-                let item = this.failures.get(system);
+            if (this.activeFailures.has(system)) {
+                let item = this.activeFailures.get(system);
                 if (typeof item === "number") clearInterval(item);
                 else if (item && typeof item.destroy === "function") item.destroy();
-                this.failures.delete(system);
+                this.activeFailures.delete(system);
             }
-            if (this.failures.has(`${system}_kill`)) { clearInterval(this.failures.get(`${system}_kill`)); this.failures.delete(`${system}_kill`); }
+            if (this.activeFailures.has(`${system}_kill`)) { clearInterval(this.activeFailures.get(`${system}_kill`)); this.activeFailures.delete(`${system}_kill`); }
 
             if (system.includes("engine")) {
                 let idx = parseInt(system.replace("engine", ""));
                 this.fails.engines[idx].i = false;
                 ac.engines[idx].thrust = ac.engines[idx]._p_thrust || 50000;
-                if (this.failures.has(`engine${idx}_emitter`)) { this.failures.get(`engine${idx}_emitter`).destroy(); this.failures.delete(`engine${idx}_emitter`); }
-                if (this.failures.has(`engine${idx}_color`)) { clearInterval(this.failures.get(`engine${idx}_color`)); this.failures.delete(`engine${idx}_color`); }
+                if (this.activeFailures.has(`engine${idx}_emitter`)) { this.activeFailures.get(`engine${idx}_emitter`).destroy(); this.activeFailures.delete(`engine${idx}_emitter`); }
+                if (this.activeFailures.has(`engine${idx}_color`)) { clearInterval(this.activeFailures.get(`engine${idx}_color`)); this.activeFailures.delete(`engine${idx}_color`); }
                 this.notify(`Engine ${idx+1} restored.`, "success");
             } else {
                 switch(system) {
@@ -363,6 +370,7 @@
 
         toggleProbability() {
             this.enabled = !this.enabled;
+            console.log("[GeoFS-V3.9_Failure-Simulator] Probability simulation toggled:", this.enabled);
             const btn = document.getElementById('enBtn');
             const sliders = document.querySelectorAll('.addonpack-range');
             if (this.enabled) {
@@ -379,6 +387,7 @@
         }
 
         failAll() {
+            console.log("[GeoFS-V3.9_Failure-Simulator] Global failure initiated.");
             const ac = window.geofs.aircraft.instance;
             ["gearFront", "gearLeft", "gearRight", "fuelLeak", "ailerons", "elevators", "rudder", "electrical", "structural", "flaps", "brakes", "spoilers", "pressurization", "mcas"].forEach(s => this.fail(s));
             const numEngines = (ac.engines && ac.engines.length) ? ac.engines.length : 0;
@@ -386,7 +395,8 @@
         }
 
         reset() {
-            this.failures.forEach((val, key) => this.fix(key));
+            console.log("[GeoFS-V3.9_Failure-Simulator] Global repair initiated.");
+            this.activeFailures.forEach((val, key) => this.fix(key));
             if (this.enabled) this.toggleProbability();
             window.weather.definition.turbulences = 0;
             if (window.instruments) window.instruments.show();
@@ -405,19 +415,20 @@
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 <input type="range" value="0" min="0" max="1" step="0.001" class="addonpack-range" id="slide${id}" 
-                       oninput="let v = (parseFloat(this.value)*100).toFixed(1); document.getElementById('input${id}').value = v + '%'; window.damageSystem.chances.${objectPath} = parseFloat(this.value);">
+                       oninput="let v = (parseFloat(this.value)*100).toFixed(1); document.getElementById('input${id}').value = v + '%'; window.failureSimulatorPro.chances.${objectPath} = parseFloat(this.value);">
                 <div style="display: flex; gap: 8px;">
-                    <button class="addonpack-btn danger" style="flex: 1; height: 24px; font-size: 10px;" onclick="window.damageSystem.fail('${failId}')">FAIL</button>
-                    <button class="addonpack-btn success" style="flex: 1; height: 24px; font-size: 10px;" onclick="window.damageSystem.fix('${failId}')">FIX</button>
+                    <button class="addonpack-btn danger" style="flex: 1; height: 24px; font-size: 10px;" onclick="window.failureSimulatorPro.fail('${failId}')">FAIL</button>
+                    <button class="addonpack-btn success" style="flex: 1; height: 24px; font-size: 10px;" onclick="window.failureSimulatorPro.fix('${failId}')">FIX</button>
                 </div>
             </div>
         </div>`;
     }
 
-    window.openDamageMenu = function() {
-        if (!window.damageSystem || geofs.aircraft.instance.id !== window.damageSystem.aId) {
-            if (window.damageSystem) window.damageSystem.reset();
-            window.damageSystem = new DamageSystem();
+    window.openFailureSimulatorMenu = function() {
+        console.log("[GeoFS-V3.9_Failure-Simulator] Opening management menu.");
+        if (!window.failureSimulatorPro || geofs.aircraft.instance.id !== window.failureSimulatorPro.aId) {
+            if (window.failureSimulatorPro) window.failureSimulatorPro.reset();
+            window.failureSimulatorPro = new FailureSimulatorPro();
             if (document.getElementById('geofs-failure-menu')) document.getElementById('geofs-failure-menu').remove();
         }
 
@@ -430,20 +441,20 @@
             
             let htmlContent = `
                 <div class="addonpack-card-header">
-                    <span>⚠️ Failure Simulator v3.9</span>
+                    <span>⚠️ GeoFS-V3.9_Failure-Simulator</span>
                     <button onclick="document.getElementById('geofs-failure-menu').classList.remove('active')" style="background:none; border:none; color:rgba(255,255,255,0.5); font-size:16px;">✕</button>
                 </div>
                 <div class="addonpack-card-content" style="max-height: 75vh; overflow-y: auto; padding: 20px;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; position: sticky; top: -20px; background: rgba(15, 25, 45, 0.95); padding: 10px 0 15px 0; z-index: 10; border-bottom: 1px solid rgba(100,200,255,0.1); backdrop-filter: blur(12px);">
-                        <button class="addonpack-btn success" id="enBtn" style="grid-column: 1 / -1;" onclick="window.damageSystem.toggleProbability()">ENABLE PROBABILITY</button>
-                        <button class="addonpack-btn danger" onclick="window.damageSystem.failAll()">FAIL ALL</button>
-                        <button class="addonpack-btn success" onclick="window.damageSystem.reset()">FIX ALL</button>
+                        <button class="addonpack-btn success" id="enBtn" style="grid-column: 1 / -1;" onclick="window.failureSimulatorPro.toggleProbability()">ENABLE PROBABILITY</button>
+                        <button class="addonpack-btn danger" onclick="window.failureSimulatorPro.failAll()">FAIL ALL</button>
+                        <button class="addonpack-btn success" onclick="window.failureSimulatorPro.reset()">FIX ALL</button>
                     </div>
             `;
 
             const h1 = "font-size: 11px; font-weight: 800; color: #64c8ff; margin: 30px 0 15px 0; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 10px;";
             const span = "<span style='flex: 1; height: 1px; background: linear-gradient(to right, rgba(100,200,255,0.2), transparent);'></span>";
-            const buildCat = (fails, fixes) => `<div style="display: flex; gap: 5px;"><button class="addonpack-btn danger" style="padding: 2px 6px; font-size: 9px; background: rgba(239,68,68,0.1);" onclick="${fails.map(f => `window.damageSystem.fail('${f}')`).join(';')}">X</button><button class="addonpack-btn success" style="padding: 2px 6px; font-size: 9px; background: rgba(34,197,94,0.1);" onclick="${fixes.map(f => `window.damageSystem.fix('${f}')`).join(';')}">✓</button></div>`;
+            const buildCat = (fails, fixes) => `<div style="display: flex; gap: 5px;"><button class="addonpack-btn danger" style="padding: 2px 6px; font-size: 9px; background: rgba(239,68,68,0.1);" onclick="${fails.map(f => `window.failureSimulatorPro.fail('${f}')`).join(';')}">X</button><button class="addonpack-btn success" style="padding: 2px 6px; font-size: 9px; background: rgba(34,197,94,0.1);" onclick="${fixes.map(f => `window.failureSimulatorPro.fix('${f}')`).join(';')}">✓</button></div>`;
 
             htmlContent += `<div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="${h1}">Landing Gear ${span}</h1> ${buildCat(['gearFront', 'gearLeft', 'gearRight'], ['gearFront', 'gearLeft', 'gearRight'])}</div>`;
             htmlContent += buildSliderBlock("Nose/Tail Gear", "GearF", "gearFront", "landingGear.gearFront");
@@ -483,8 +494,9 @@
         menu.classList.toggle('active');
     };
 
-    window.initDamageSystem = function() {
+    window.initFailureSimulatorPro = function() {
         if (document.getElementById('geofs-fail-btn')) return;
+        console.log("[GeoFS-V3.9_Failure-Simulator] Initializing standalone FAILURES button.");
         const btn = document.createElement('div');
         btn.id = 'geofs-fail-btn';
         btn.style.position = "fixed";
@@ -527,11 +539,11 @@
         });
 
         document.addEventListener('mouseup', () => {
-            if (isDragging && !hasMoved) window.openDamageMenu();
+            if (isDragging && !hasMoved) window.openFailureSimulatorMenu();
             isDragging = false;
         });
     };
 
-    if (window.SafeInit) SafeInit("Failure Simulator", window.initDamageSystem);
-    else window.initDamageSystem();
+    if (window.SafeInit) SafeInit("GeoFS-V3.9_Failure-Simulator", window.initFailureSimulatorPro);
+    else window.initFailureSimulatorPro();
 })();

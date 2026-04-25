@@ -11,20 +11,20 @@
 // @grant        none
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
-    
-    const damageUrl = 'https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/GeoFS-V3.9_Failure-Simulator/main/failure-simulator.js';
 
-    function loadDamageSystem() {
-        if (window.damageSystem) return;
+    const failureSimulatorUrl = 'https://raw.githack.com/AwesomeOddEven-NightKeys-LunarBlink/GeoFS-V3.9_Failure-Simulator/main/failure-simulator.js';
+
+    function loadFailureSimulatorPro() {
+        if (window.failureSimulatorPro) return;
         const script = document.createElement('script');
-        script.src = damageUrl;
+        script.src = failureSimulatorUrl;
         document.head.appendChild(script);
-        console.log('GeoFS [Damage]: Main logic fetched from CDN.');
+        console.log('[GeoFS-V3.9_Failure-Simulator] Main logic script injected.');
     }
 
-    console.log('GeoFS [Damage]: Waiting for Core and Design systems...');
+    console.log('[GeoFS-V3.9_Failure-Simulator] Waiting for Core and Design foundations...');
 
     const checker = setInterval(() => {
         // Ensure both dependencies are active before launching
@@ -33,8 +33,8 @@
 
         if (coreReady && designReady) {
             clearInterval(checker);
-            console.log('GeoFS [Damage]: Foundations confirmed. Loading Simulator...');
-            loadDamageSystem();
+            console.log('[GeoFS-V3.9_Failure-Simulator] Foundations confirmed. Booting Pro Simulator...');
+            loadFailureSimulatorPro();
         }
     }, 1000);
 })();
