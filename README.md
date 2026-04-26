@@ -1,6 +1,6 @@
 # GeoFS-V3.9_Failure-Simulator
 
-![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.0.1-blue?style=for-the-badge)
 ![Ecosystem](https://img.shields.io/badge/GeoFS-V3.9_Addon--Pack-64c8ff?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Stable-green?style=for-the-badge)
 
