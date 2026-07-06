@@ -20,6 +20,6 @@ The most advanced emergency simulation framework for **GeoFS v3.9**. This system
 
 1. Install the [Tampermonkey](https://www.tampermonkey.net/) extension.
 2. Install the script via [**Greasy Fork**](https://greasyfork.org/en/scripts/581515-geofs-v3-9-failure-simulator).
-3. Refresh GeoFS and the failure simulation interface will automatically initialize alongside the HUD.
+3. Refresh GeoFS and the module will automatically initialize alongside the HUD.
 
 *© 2026 _init. Part of the [GeoFS-V3.9_Ecosystem](https://sites.google.com/view/geofs-v39-ecosystem/home).*
