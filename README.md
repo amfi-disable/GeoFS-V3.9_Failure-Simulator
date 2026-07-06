@@ -1,10 +1,10 @@
 # GeoFS-V3.9_Failure-Simulator
 
-![Version](https://img.shields.io/badge/Version-v2.0.1-3b82f6?style=flat-square&logo=git&logoColor=white)
+![Version](https://img.shields.io/badge/Version-V2.0.1-3b82f6?style=flat-square&logo=git&logoColor=white)
 ![Ecosystem](https://img.shields.io/badge/GeoFS--V3.9-Failure_Simulator-06b6d4?style=flat-square&logo=box&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-Stable-10b981?style=flat-square&logo=lighthouse&logoColor=white)
 
-The most advanced emergency simulation framework for **GeoFS v3.9**. This system introduces high-fidelity probabilistic failures across every major aircraft system, from engine flameouts to hydraulic leaks, forcing pilots to react with professional precision.
+The most advanced emergency simulation framework for **GeoFS-V3.9**. This system introduces high-fidelity probabilistic failures across every major aircraft system, from engine flameouts to hydraulic leaks, forcing pilots to react with professional precision.
 
 ## ✨ Features
 

@@ -30,7 +30,7 @@ body:
     id: version
     attributes:
       label: Simulator Version
-      description: e.g. v1.0.0
+      description: e.g. V1.0.0
     validations:
       required: true
   - type: textarea
